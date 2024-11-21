@@ -92,7 +92,7 @@ def parse_derivation_path(str_derivation_path):
     return path
 
 
-def mnemonic_to_ecdsa_private_key(mnemonic: str, str_derivation_path: str = None, passphrase: str = "") -> bytes:
+def mnemonic_to_ecdsa_private_key(mnemonic: str, str_derivation_path: str | None = None, passphrase: str = "") -> bytes:
 
     if str_derivation_path is None:
         str_derivation_path = f'{ETH_DERIVATION_PATH}/0'

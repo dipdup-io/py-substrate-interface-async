@@ -178,7 +178,7 @@ class ContractMetadata:
                 portable_registry['types'], prefix=self.type_string_prefix
             )
 
-    def generate_constructor_data(self, name, args: dict = None) -> ScaleBytes:
+    def generate_constructor_data(self, name, args: dict | None = None) -> ScaleBytes:
         """
         Compose the data field used in the "Contracts.instantiate" call, finding the selectors and encoded the args
         of given constructor
@@ -348,7 +348,7 @@ class ContractMetadata:
 
         raise ValueError(f'Message "{name}" not found')
 
-    def generate_message_data(self, name, args: dict = None) -> ScaleBytes:
+    def generate_message_data(self, name, args: dict | None = None) -> ScaleBytes:
         """
         Compose the data field used in the "Contracts.call" call, finding the selector and encoded the args
         of provided message name
@@ -409,7 +409,7 @@ class ContractMetadata:
 
 class ContractEvent(ScaleType):
 
-    def __init__(self, *args, contract_metadata: ContractMetadata = None, **kwargs):
+    def __init__(self, *args, contract_metadata: Optional[ContractMetadata] = None, **kwargs):
         """
         ScaleType class containing information about a specific Contract Event, it decodes the "data" field in
         the generic "Contracts.ContractExecution" event that is triggered after a successfull "Contracts.call" call.
@@ -465,7 +465,7 @@ class ContractExecutionReceipt(ExtrinsicReceipt):
 
     @classmethod
     def create_from_extrinsic_receipt(cls, receipt: ExtrinsicReceipt,
-                                      contract_metadata: ContractMetadata, contract_address: str = None) -> "ContractExecutionReceipt":
+                                      contract_metadata: ContractMetadata, contract_address: str | None = None) -> "ContractExecutionReceipt":
         """
         Promotes a ExtrinsicReceipt object to a ContractExecutionReceipt. It uses the provided ContractMetadata to
         decode "ContractExecution" events
@@ -545,8 +545,8 @@ class ContractExecutionReceipt(ExtrinsicReceipt):
 
 class ContractCode:
 
-    def __init__(self, code_hash: bytes = None, metadata: ContractMetadata = None, wasm_bytes: bytes = None,
-                 substrate: SubstrateInterface = None):
+    def __init__(self, code_hash: Optional[bytes] = None, metadata: Optional[ContractMetadata] = None, wasm_bytes: Optional[bytes] = None,
+                 substrate: SubstrateInterface | None = None):
         """
         Object representing the blueprint of the contract, combining either the code hash and metadata of a contract, or
         the WASM bytes and metadata
@@ -610,7 +610,7 @@ class ContractCode:
 
         return cls(code_hash=code_hash, metadata=metadata, substrate=substrate)
 
-    def upload_wasm(self, keypair: Keypair, storage_deposit_limit: int = None) -> ExtrinsicReceipt:
+    async def upload_wasm(self, keypair: Keypair, storage_deposit_limit: int | None = None) -> ExtrinsicReceipt:
         """
         Created and submits an "Contracts.upload_code" extrinsic containing the WASM binary
 
@@ -623,19 +623,20 @@ class ContractCode:
         -------
         ExtrinsicReceipt
         """
+        assert self.substrate
         if not self.wasm_bytes:
             raise ValueError("No WASM bytes to upload")
 
-        call_function = self.substrate.get_metadata_call_function('Contracts', 'upload_code')
+        call_function = await self.substrate.get_metadata_call_function('Contracts', 'upload_code')
 
         if not call_function:
             # Try to fall back on legacy `put_code`
-            call_function = self.substrate.get_metadata_call_function('Contracts', 'put_code')
+            call_function = await self.substrate.get_metadata_call_function('Contracts', 'put_code')
 
         if not call_function:
             raise NotImplementedError("Couldn't find method in Contracts pallet to upload the WASM binary")
 
-        call = self.substrate.compose_call(
+        call = await self.substrate.compose_call(
             call_module="Contracts",
             call_function=call_function.name,
             call_params={
@@ -644,12 +645,12 @@ class ContractCode:
             }
         )
 
-        extrinsic = self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
+        extrinsic = await self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
 
-        return self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+        return await self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
-    def deploy(self, keypair: Keypair, constructor: str, args: dict = None, value: int = 0, gas_limit: dict = None,
-               deployment_salt: str = None, upload_code: bool = False, storage_deposit_limit: int = None
+    async def deploy(self, keypair: Keypair, constructor: str, args: dict | None = None, value: int = 0, gas_limit: dict | None = None,
+               deployment_salt: str | None = None, upload_code: bool = False, storage_deposit_limit: int | None = None
                ) -> "ContractInstance":
         """
         Deploys a new instance of the contract after it has been uploaded on-chain, with provided constructor and
@@ -672,6 +673,7 @@ class ContractCode:
         """
 
         # Lookup constructor
+        assert self.substrate
         data = self.metadata.generate_constructor_data(name=constructor, args=args)
 
         if gas_limit is None:
@@ -682,7 +684,7 @@ class ContractCode:
             if not self.wasm_bytes:
                 raise ValueError("No WASM bytes to upload")
 
-            call = self.substrate.compose_call(
+            call = await self.substrate.compose_call(
                 call_module='Contracts',
                 call_function='instantiate_with_code',
                 call_params={
@@ -696,7 +698,7 @@ class ContractCode:
             )
         else:
 
-            call = self.substrate.compose_call(
+            call = await self.substrate.compose_call(
                 call_module='Contracts',
                 call_function='instantiate',
                 call_params={
@@ -709,9 +711,9 @@ class ContractCode:
                 }
             )
 
-        extrinsic = self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
+        extrinsic = await self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
 
-        result = self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+        result = await self.substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
         if not result.is_success:
             raise ExtrinsicFailedException(result.error_message)
@@ -740,17 +742,17 @@ class ContractCode:
 
 class ContractInstance:
 
-    def __init__(self, contract_address: str, metadata: ContractMetadata = None, substrate: SubstrateInterface = None):
+    def __init__(self, contract_address: str, metadata: Optional[ContractMetadata] = None, substrate: SubstrateInterface | None = None):
         self.substrate = substrate
         self.contract_address = contract_address
         self.metadata = metadata
 
-        self.init()
+        # self.init()
 
-    def init(self):
+    async def init(self):
         # Determine ContractExecResult according to PalletVersion
         try:
-            pallet_version = self.substrate.query("Contracts", "PalletVersion")
+            pallet_version = await self.substrate.query("Contracts", "PalletVersion")
 
             if pallet_version.value <= 9:
                 self.substrate.runtime_config.update_type_registry_types(
@@ -765,7 +767,7 @@ class ContractInstance:
 
     @classmethod
     def create_from_address(cls, contract_address: str, metadata_file: str,
-                            substrate: SubstrateInterface = None) -> "ContractInstance":
+                            substrate: SubstrateInterface | None = None) -> "ContractInstance":
         """
         Create a ContractInstance object that already exists on-chain providing a SS58-address and the path to the
         metadata JSON of that contract
@@ -785,8 +787,8 @@ class ContractInstance:
 
         return cls(contract_address=contract_address, metadata=metadata, substrate=substrate)
 
-    def read(self, keypair: Keypair, method: str, args: dict = None,
-             value: int = 0, gas_limit: int = None, block_hash: str = None) -> GenericContractExecResult:
+    async def read(self, keypair: Keypair, method: str, args: dict | None = None,
+             value: int = 0, gas_limit: int | None = None, block_hash: str | None = None) -> GenericContractExecResult:
         """
         Used to execute non-mutable messages to for example read data from the contract using getters. Can also be used
         to predict gas limits and 'dry-run' the execution when a mutable message is used.
@@ -807,9 +809,9 @@ class ContractInstance:
         """
 
         input_data = self.metadata.generate_message_data(name=method, args=args)
-
+        assert self.substrate
         # Execute runtime call in ContractsApi
-        call_result = self.substrate.runtime_call("ContractsApi", "call", {
+        call_result = await self.substrate.runtime_call("ContractsApi", "call", {
             'dest': self.contract_address,
             'gas_limit': gas_limit,
             'input_data': input_data.to_hex(),
@@ -824,7 +826,7 @@ class ContractInstance:
 
             try:
                 return_type_string = self.metadata.get_return_type_string_for_message(method)
-                result_scale_obj = self.substrate.create_scale_object(return_type_string)
+                result_scale_obj = await self.substrate.create_scale_object(return_type_string)
                 result_scale_obj.decode(ScaleBytes(call_result['result'][1]['data'].value_object))
                 call_result.value_object['result'].value_object[1].value_object['data'] = result_scale_obj
                 call_result.value['result']['Ok']['data'] = result_scale_obj.value
@@ -834,8 +836,8 @@ class ContractInstance:
 
         return call_result
 
-    def exec(self, keypair: Keypair, method: str, args: dict = None,
-             value: int = 0, gas_limit: Optional[dict] = None, storage_deposit_limit: int = None,
+    async def exec(self, keypair: Keypair, method: str, args: dict | None = None,
+             value: int = 0, gas_limit: Optional[dict] = None, storage_deposit_limit: int | None = None,
              wait_for_inclusion: bool = True, wait_for_finalization: bool = False
              ) -> ContractExecutionReceipt:
         """
@@ -857,9 +859,9 @@ class ContractInstance:
         -------
         ContractExecutionReceipt
         """
-
+        assert self.substrate
         if gas_limit is None:
-            gas_predit_result = self.read(keypair, method, args, value)
+            gas_predit_result = await self.read(keypair, method, args, value)
             gas_limit = gas_predit_result.gas_required
 
         input_data = self.metadata.generate_message_data(name=method, args=args)

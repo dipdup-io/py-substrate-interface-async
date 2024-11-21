@@ -140,8 +140,8 @@ class SubstrateNodeExtension(SearchExtension):
     Implementation of `SearchExtension` using only Substrate RPC methods. Could be significant inefficient.
     """
 
-    def filter_extrinsics(self, block_start: int = None, block_end: int = None, ss58_address: str = None,
-                          pallet_name: str = None, call_name: str = None) -> list:
+    def filter_extrinsics(self, block_start: int | None = None, block_end: int | None = None, ss58_address: str | None = None,
+                          pallet_name: str | None = None, call_name: str | None = None) -> list:
 
         if block_end is None:
             block_end = self.substrate.get_block_number(None)
@@ -173,8 +173,8 @@ class SubstrateNodeExtension(SearchExtension):
 
         self.max_block_range: int = max_block_range
 
-    def filter_events(self, block_start: int = None, block_end: int = None, pallet_name: str = None,
-                      event_name: str = None, account_id: str = None) -> list:
+    def filter_events(self, block_start: int | None = None, block_end: int | None = None, pallet_name: str | None = None,
+                      event_name: str | None = None, account_id: str | None = None) -> list:
 
         if block_end is None:
             block_end = self.substrate.get_block_number(None)

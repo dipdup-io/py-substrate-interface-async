@@ -84,8 +84,8 @@ class MnemonicLanguageCode:
 
 class Keypair:
 
-    def __init__(self, ss58_address: str = None, public_key: Union[bytes, str] = None,
-                 private_key: Union[bytes, str] = None, ss58_format: int = None, seed_hex: Union[str, bytes] = None,
+    def __init__(self, ss58_address: str | None = None, public_key: Optional[Union[bytes, str]] = None,
+                 private_key: Optional[Union[bytes, str]] = None, ss58_format: int | None = None, seed_hex: Optional[Union[str, bytes]] = None,
                  crypto_type: int = KeypairType.SR25519):
         """
         Allows generation of Keypairs from a variety of input combination, such as a public/private key combination,
@@ -334,8 +334,8 @@ class Keypair:
 
     @classmethod
     def create_from_private_key(
-            cls, private_key: Union[bytes, str], public_key: Union[bytes, str] = None, ss58_address: str = None,
-            ss58_format: int = None, crypto_type: int = KeypairType.SR25519
+            cls, private_key: Union[bytes, str], public_key: Optional[Union[bytes, str]] = None, ss58_address: str | None = None,
+            ss58_format: int | None = None, crypto_type: int = KeypairType.SR25519
     ) -> 'Keypair':
         """
         Creates Keypair for specified public/private keys
@@ -359,7 +359,7 @@ class Keypair:
 
     @classmethod
     def create_from_encrypted_json(cls, json_data: Union[str, dict], passphrase: str,
-                                   ss58_format: int = None) -> 'Keypair':
+                                   ss58_format: int | None = None) -> 'Keypair':
         """
         Create a Keypair from a PolkadotJS format encrypted JSON file
 
@@ -393,7 +393,7 @@ class Keypair:
 
         return cls.create_from_private_key(private_key, public_key, ss58_format=ss58_format, crypto_type=crypto_type)
 
-    def export_to_encrypted_json(self, passphrase: str, name: str = None) -> dict:
+    def export_to_encrypted_json(self, passphrase: str, name: str | None = None) -> dict:
         """
         Export Keypair to PolkadotJS format encrypted JSON file
 

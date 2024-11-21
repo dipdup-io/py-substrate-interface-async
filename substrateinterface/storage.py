@@ -48,8 +48,8 @@ class StorageKey:
 
     @classmethod
     def create_from_data(cls, data: bytes, runtime_config: RuntimeConfigurationObject,
-                         metadata: GenericMetadataVersioned, value_scale_type: str = None, pallet: str = None,
-                         storage_function: str = None) -> 'StorageKey':
+                         metadata: GenericMetadataVersioned, value_scale_type: str | None = None, pallet: str | None = None,
+                         storage_function: str | None = None) -> 'StorageKey':
         """
         Create a StorageKey instance providing raw storage key bytes
 
