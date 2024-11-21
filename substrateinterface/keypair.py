@@ -150,13 +150,13 @@ class Keypair:
             if not ss58_address:
                 ss58_address = ss58_encode(public_key, ss58_format=ss58_format)
 
-        self.ss58_format: int = ss58_format
+        self.ss58_format: int | None = ss58_format
 
-        self.public_key: bytes = public_key
+        self.public_key: bytes | None = public_key
 
-        self.ss58_address: str = ss58_address
+        self.ss58_address: str | None = ss58_address
 
-        self.private_key: bytes = private_key
+        self.private_key: bytes | None = private_key
 
         self.mnemonic = None
 
