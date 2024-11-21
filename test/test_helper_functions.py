@@ -25,7 +25,7 @@ from substrateinterface import SubstrateInterface, Keypair
 from test.settings import POLKADOT_NODE_URL
 
 
-class TestHelperFunctions(unittest.TestCase):
+class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
 
     test_metadata_version = 'V13'
 
@@ -281,7 +281,7 @@ class TestHelperFunctionsKarura(TestHelperFunctionsV14):
         self.assertEqual(1200, constant.value)
 
 
-class TestRPCHelperFunctions(unittest.TestCase):
+class TestRPCHelperFunctions(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -308,7 +308,7 @@ class TestRPCHelperFunctions(unittest.TestCase):
         self.assertIsInstance(pending_extrinsics[0], GenericExtrinsic)
 
 
-class SS58HelperTestCase(unittest.TestCase):
+class SS58HelperTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls) -> None:

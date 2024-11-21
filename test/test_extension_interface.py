@@ -24,7 +24,7 @@ from substrateinterface.extensions import SubstrateNodeExtension
 from test import settings
 
 
-class ExtensionsTestCase(unittest.TestCase):
+class ExtensionsTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):

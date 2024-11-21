@@ -25,7 +25,7 @@ from substrateinterface import SubstrateInterface
 from test import settings
 
 
-class QueryMapTestCase(unittest.TestCase):
+class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):

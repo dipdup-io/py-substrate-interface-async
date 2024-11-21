@@ -22,7 +22,7 @@ from substrateinterface import SubstrateInterface
 from test import settings
 
 
-class TestInit(unittest.TestCase):
+class TestInit(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):

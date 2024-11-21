@@ -20,7 +20,7 @@ from substrateinterface import SubstrateInterface
 from test import settings
 
 
-class SubscriptionsTestCase(unittest.TestCase):
+class SubscriptionsTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):

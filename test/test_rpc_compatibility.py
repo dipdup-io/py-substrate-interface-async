@@ -28,7 +28,7 @@ from scalecodec.base import ScaleBytes
 from scalecodec.types import Vec, GenericAddress
 
 
-class RPCCompatilibityTestCase(unittest.TestCase):
+class RPCCompatilibityTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):

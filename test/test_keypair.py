@@ -23,7 +23,7 @@ from scalecodec.base import ScaleBytes
 from substrateinterface import Keypair, KeypairType, MnemonicLanguageCode
 
 
-class KeyPairTestCase(unittest.TestCase):
+class KeyPairTestCase(unittest.IsolatedAsyncioTestCase):
 
     def test_generate_mnemonic(self):
         mnemonic = Keypair.generate_mnemonic()

@@ -22,7 +22,7 @@ from substrateinterface.utils.ss58 import ss58_decode, ss58_encode, ss58_encode_
 from substrateinterface import Keypair
 
 
-class SS58TestCase(unittest.TestCase):
+class SS58TestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls) -> None:

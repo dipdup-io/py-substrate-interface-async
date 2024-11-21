@@ -15,6 +15,7 @@
 # limitations under the License.
 
 
+from functools import cached_property
 import warnings
 
 from datetime import datetime
@@ -168,9 +169,11 @@ class SubstrateInterface:
         # Initialize extension interface
         self.extensions = ExtensionInterface(self)
 
-        self.session = ClientSession()
+        self.reload_type_registry(use_remote_preset=False, auto_discover=False)
 
-        # self.reload_type_registry(use_remote_preset=use_remote_preset, auto_discover=auto_discover)
+    @cached_property
+    def session(self):
+        return ClientSession()
 
     def connect_websocket(self):
         """
@@ -439,6 +442,7 @@ class SubstrateInterface:
         """
         if self.metadata:
             return self.metadata.portable_registry is not None
+        return None
 
     async def get_chain_head(self) -> str:
         """

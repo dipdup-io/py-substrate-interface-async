@@ -22,7 +22,7 @@ from substrateinterface.exceptions import StorageFunctionNotFound
 from test import settings
 
 
-class QueryTestCase(unittest.TestCase):
+class QueryTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):

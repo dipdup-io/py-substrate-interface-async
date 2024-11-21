@@ -23,7 +23,7 @@ from substrateinterface import SubstrateInterface, Keypair, KeypairType
 from test import settings
 
 
-class KusamaTypeRegistryTestCase(unittest.TestCase):
+class KusamaTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -41,7 +41,7 @@ class KusamaTypeRegistryTestCase(unittest.TestCase):
             self.assertIsNotNone(obj, '{} not supported'.format(scale_type))
 
 
-class PolkadotTypeRegistryTestCase(unittest.TestCase):
+class PolkadotTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -60,7 +60,7 @@ class PolkadotTypeRegistryTestCase(unittest.TestCase):
             self.assertIsNotNone(obj, '{} not supported'.format(scale_type))
 
 
-class RococoTypeRegistryTestCase(unittest.TestCase):
+class RococoTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -79,7 +79,7 @@ class RococoTypeRegistryTestCase(unittest.TestCase):
             self.assertIsNotNone(obj, '{} not supported'.format(scale_type))
 
 #
-# class DevelopmentTypeRegistryTestCase(unittest.TestCase):
+# class DevelopmentTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
 #
 #     @classmethod
 #     def setUpClass(cls):
@@ -98,7 +98,7 @@ class RococoTypeRegistryTestCase(unittest.TestCase):
 #             self.assertIsNotNone(obj, '{} not supported'.format(scale_type))
 
 
-class ReloadTypeRegistryTestCase(unittest.TestCase):
+class ReloadTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self) -> None:
         self.substrate = SubstrateInterface(
@@ -142,7 +142,7 @@ class ReloadTypeRegistryTestCase(unittest.TestCase):
         self.assertEqual(u32_cls, self.substrate.runtime_config.get_decoder_class('Index'))
 
 
-class AutodiscoverV14RuntimeTestCase(unittest.TestCase):
+class AutodiscoverV14RuntimeTestCase(unittest.IsolatedAsyncioTestCase):
     runtime_config = None
     metadata_obj = None
     metadata_fixture_dict = None
@@ -185,7 +185,7 @@ class AutodiscoverV14RuntimeTestCase(unittest.TestCase):
         self.assertIsNotNone(self.substrate.runtime_config.get_decoder_class('SpecificTestType'))
 
 
-class AutodetectAddressTypeTestCase(unittest.TestCase):
+class AutodetectAddressTypeTestCase(unittest.IsolatedAsyncioTestCase):
 
     def test_default_substrate_address(self):
         substrate = SubstrateInterface(

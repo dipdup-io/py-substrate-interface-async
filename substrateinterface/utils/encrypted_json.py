@@ -6,7 +6,10 @@ from typing import Union
 
 from nacl.hashlib import scrypt
 from nacl.secret import SecretBox
-from sr25519 import pair_from_ed25519_secret_key
+try:
+    from sr25519 import pair_from_ed25519_secret_key
+except ImportError:
+    pair_from_ed25519_secret_key = None
 
 
 NONCE_LENGTH = 24

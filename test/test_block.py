@@ -29,16 +29,17 @@ from scalecodec.base import ScaleBytes
 from scalecodec.types import Vec, GenericAddress
 
 
-class BlockTestCase(unittest.TestCase):
+class BlockTestCase(unittest.IsolatedAsyncioTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.substrate = SubstrateInterface(url='dummy', ss58_format=42, type_registry_preset='substrate-node-template')
-        metadata_decoder = cls.substrate.runtime_config.create_scale_object(
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.substrate = SubstrateInterface(url='dummy', ss58_format=42, type_registry_preset='substrate-node-template')
+        self.substrate.reload_type_registry()
+        metadata_decoder = self.substrate.runtime_config.create_scale_object(
             'MetadataVersioned', ScaleBytes(metadata_node_template_hex)
         )
         metadata_decoder.decode()
-        cls.substrate.get_block_metadata = MagicMock(return_value=metadata_decoder)
+        self.substrate.get_block_metadata = MagicMock(return_value=metadata_decoder)
 
         def mocked_query(module, storage_function, block_hash):
             if module == 'Session' and storage_function == 'Validators':
@@ -165,18 +166,18 @@ class BlockTestCase(unittest.TestCase):
 
             raise ValueError(f"Unsupported mocked method {method}")
 
-        cls.substrate.rpc_request = MagicMock(side_effect=mocked_request)
-        cls.substrate.query = MagicMock(side_effect=mocked_query)
+        self.substrate.rpc_request = MagicMock(side_effect=mocked_request)
+        self.substrate.query = MagicMock(side_effect=mocked_query)
 
-        cls.babe_substrate = SubstrateInterface(
+        self.babe_substrate = SubstrateInterface(
             url=settings.BABE_NODE_URL
         )
 
-        cls.aura_substrate = SubstrateInterface(
+        self.aura_substrate = SubstrateInterface(
             url=settings.AURA_NODE_URL
         )
 
-    def test_get_valid_extrinsics(self):
+    async def test_get_valid_extrinsics(self):
 
         block = self.substrate.get_block(
             block_hash="0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93"

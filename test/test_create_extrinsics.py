@@ -23,7 +23,7 @@ from substrateinterface.exceptions import SubstrateRequestException
 from test import settings
 
 
-class CreateExtrinsicsTestCase(unittest.TestCase):
+class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):

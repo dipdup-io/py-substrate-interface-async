@@ -23,7 +23,7 @@ from substrateinterface.exceptions import ContractMetadataParseException
 from test import settings
 
 
-class ContractMetadataTestCase(unittest.TestCase):
+class ContractMetadataTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -284,7 +284,7 @@ class ContractMetadataV3TestCase(ContractMetadataV1TestCase):
         )
 
 
-class FlipperMetadataV3TestCase(unittest.TestCase):
+class FlipperMetadataV3TestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -347,7 +347,7 @@ class FlipperMetadataV3TestCase(unittest.TestCase):
         self.assertEqual('Message "invalid_msg_name" not found', str(cm.exception))
 
 
-class FlipperInstanceTestCase(unittest.TestCase):
+class FlipperInstanceTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):

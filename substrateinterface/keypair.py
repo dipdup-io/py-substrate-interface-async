@@ -37,9 +37,16 @@ from .key import extract_derive_path
 from .utils.ecdsa_helpers import mnemonic_to_ecdsa_private_key, ecdsa_verify, ecdsa_sign
 from .utils.encrypted_json import decode_pair_from_encrypted_json, encode_pair
 
-from bip39 import bip39_to_mini_secret, bip39_generate, bip39_validate
-import sr25519
-import ed25519_zebra
+try:
+    from bip39 import bip39_to_mini_secret, bip39_generate, bip39_validate
+    import sr25519
+    import ed25519_zebra
+except ImportError:
+    bip39_to_mini_secret = None
+    bip39_generate = None
+    bip39_validate = None
+    sr25519 = None
+    ed25519_zebra = None
 
 __all__ = ['Keypair', 'KeypairType', 'MnemonicLanguageCode']
 
