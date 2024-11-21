@@ -4,12 +4,15 @@ from os import urandom
 
 from typing import Union
 
-from nacl.hashlib import scrypt
-from nacl.secret import SecretBox
+from substrateinterface.utils import CryptoExtraFallback
 try:
+    from nacl.hashlib import scrypt
+    from nacl.secret import SecretBox
     from sr25519 import pair_from_ed25519_secret_key
 except ImportError:
-    pair_from_ed25519_secret_key = None
+    pair_from_ed25519_secret_key = CryptoExtraFallback()
+    scrypt = CryptoExtraFallback()
+    SecretBox = CryptoExtraFallback()
 
 
 NONCE_LENGTH = 24

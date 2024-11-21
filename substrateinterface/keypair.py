@@ -27,9 +27,7 @@ import re
 import secrets
 from base64 import b64encode
 
-import nacl.bindings
-import nacl.public
-from eth_keys.datatypes import PrivateKey
+from substrateinterface.utils import CryptoExtraFallback
 
 from .constants import DEV_PHRASE
 from .exceptions import ConfigurationError
@@ -41,12 +39,17 @@ try:
     from bip39 import bip39_to_mini_secret, bip39_generate, bip39_validate
     import sr25519
     import ed25519_zebra
+    import nacl.bindings
+    import nacl.public
+    from eth_keys.datatypes import PrivateKey
 except ImportError:
-    bip39_to_mini_secret = None
-    bip39_generate = None
-    bip39_validate = None
-    sr25519 = None
-    ed25519_zebra = None
+    bip39_to_mini_secret = CryptoExtraFallback()
+    bip39_generate = CryptoExtraFallback()
+    bip39_validate = CryptoExtraFallback()
+    sr25519 = CryptoExtraFallback()
+    ed25519_zebra = CryptoExtraFallback()
+    nacl = CryptoExtraFallback()
+    PrivateKey = CryptoExtraFallback()
 
 __all__ = ['Keypair', 'KeypairType', 'MnemonicLanguageCode']
 

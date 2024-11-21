@@ -32,3 +32,13 @@ def version_tuple(version_string: str) -> tuple:
         raise ValueError('version_string can only contain numeric characters')
 
     return tuple(int(v) for v in version_string.split('.'))
+
+
+class CryptoExtraFallback:
+    def __getattr__(self, item):
+        raise ImportError(
+            "Please, install the package with 'full' extra, e.g. `pip install substrate-interface-async[full]`"
+        )
+
+    def __call__(self, *args, **kwargs):
+        self.__getattr__('throw')

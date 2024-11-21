@@ -18,7 +18,13 @@
 """
 
 from hashlib import blake2b
-import xxhash
+
+from substrateinterface.utils import CryptoExtraFallback
+
+try:
+    import xxhash
+except ImportError:
+    xxhash = CryptoExtraFallback()
 
 
 def blake2_256(data):

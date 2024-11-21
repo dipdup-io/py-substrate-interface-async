@@ -18,9 +18,18 @@ import hashlib
 import hmac
 import struct
 
-from ecdsa.curves import SECP256k1
-from eth_keys.datatypes import Signature, PrivateKey
-from eth_utils import to_checksum_address, keccak as eth_utils_keccak
+from substrateinterface.utils import CryptoExtraFallback
+
+try:
+    from ecdsa.curves import SECP256k1
+    from eth_keys.datatypes import Signature, PrivateKey
+    from eth_utils import to_checksum_address, keccak as eth_utils_keccak
+except ImportError:
+    SECP256k1 = CryptoExtraFallback()
+    Signature = CryptoExtraFallback()
+    PrivateKey = CryptoExtraFallback()
+    to_checksum_address = CryptoExtraFallback()
+    eth_utils_keccak = CryptoExtraFallback()
 
 BIP39_PBKDF2_ROUNDS = 2048
 BIP39_SALT_MODIFIER = "mnemonic"
