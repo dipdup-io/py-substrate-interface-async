@@ -14,29 +14,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 from substrateinterface import SubstrateInterface, Keypair
 
 
 # import logging
 # logging.basicConfig(level=logging.DEBUG)
 
+async def main():
+    substrate = SubstrateInterface(
+        url="ws://127.0.0.1:9944"
+    )
 
-substrate = SubstrateInterface(
-    url="ws://127.0.0.1:9944"
-)
+    keypair = Keypair.create_from_uri('//Alice')
 
-keypair = Keypair.create_from_uri('//Alice')
+    call = substrate.compose_call(
+        call_module='Balances',
+        call_function='transfer_keep_alive',
+        call_params={
+            'dest': '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+            'value': 1 * 10**15
+        }
+    )
 
-call = substrate.compose_call(
-    call_module='Balances',
-    call_function='transfer_keep_alive',
-    call_params={
-        'dest': '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
-        'value': 1 * 10**15
-    }
-)
+    # Get payment info
+    payment_info = substrate.get_payment_info(call=call, keypair=keypair)
 
-# Get payment info
-payment_info = substrate.get_payment_info(call=call, keypair=keypair)
+    print("Payment info: ", payment_info)
 
-print("Payment info: ", payment_info)
+if __name__ == "__main__":
+    asyncio.run(main())

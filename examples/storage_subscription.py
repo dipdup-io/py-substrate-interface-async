@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import asyncio
 from substrateinterface import SubstrateInterface
 
 
@@ -20,21 +21,25 @@ def subscription_handler(storage_key, updated_obj, update_nr, subscription_id):
     print(f"Update for {storage_key}: {updated_obj.value}")
 
 
-substrate = SubstrateInterface(url="ws://127.0.0.1:9944")
+async def main():
+    substrate = SubstrateInterface(url="ws://127.0.0.1:9944")
 
-# Accounts to track
-storage_keys = [
-    substrate.create_storage_key(
-        "System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"]
-    ),
-    substrate.create_storage_key(
-        "System", "Account", ["5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"]
-    ),
-    substrate.create_storage_key(
-        "System", "Events"
-    ),
-]
+    # Accounts to track
+    storage_keys = [
+        substrate.create_storage_key(
+            "System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"]
+        ),
+        substrate.create_storage_key(
+            "System", "Account", ["5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"]
+        ),
+        substrate.create_storage_key(
+            "System", "Events"
+        ),
+    ]
 
-result = substrate.subscribe_storage(
-    storage_keys=storage_keys, subscription_handler=subscription_handler
-)
+    substrate.subscribe_storage(
+        storage_keys=storage_keys, subscription_handler=subscription_handler
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -878,10 +878,10 @@ class ContractInstance:
             }
         )
 
-        extrinsic = self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
+        extrinsic = await self.substrate.create_signed_extrinsic(call=call, keypair=keypair)
 
-        receipt = self.substrate.submit_extrinsic(
+        receipt = await self.substrate.submit_extrinsic(
             extrinsic, wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization
         )
 
-        return ContractExecutionReceipt.create_from_extrinsic_receipt(receipt, self.metadata, self.contract_address)
+        return await ContractExecutionReceipt.create_from_extrinsic_receipt(receipt, self.metadata, self.contract_address)
