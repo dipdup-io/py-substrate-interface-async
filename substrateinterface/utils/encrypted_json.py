@@ -6,14 +6,12 @@ from typing import Union
 
 from substrateinterface.utils import CryptoExtraFallback
 try:
-    from nacl.hashlib import scrypt
-    from nacl.secret import SecretBox
-    from sr25519 import pair_from_ed25519_secret_key
+    import nacl.hashlib
+    import nacl.secret
+    import sr25519
 except ImportError:
-    pair_from_ed25519_secret_key = CryptoExtraFallback()
-    scrypt = CryptoExtraFallback()
-    SecretBox = CryptoExtraFallback()
-
+    nacl = CryptoExtraFallback()
+    sr25519 = CryptoExtraFallback()
 
 NONCE_LENGTH = 24
 SCRYPT_LENGTH = 32 + (3 * 4)
@@ -57,7 +55,7 @@ def decode_pair_from_encrypted_json(json_data: Union[str, dict], passphrase: str
         p = int.from_bytes(encrypted[36:40], byteorder='little')
         r = int.from_bytes(encrypted[40:44], byteorder='little')
 
-        password = scrypt(passphrase.encode(), salt, n=n, r=r, p=p, dklen=32, maxmem=2 ** 26)
+        password = nacl.hashlib.scrypt(passphrase.encode(), salt, n=n, r=r, p=p, dklen=32, maxmem=2 ** 26)
         encrypted = encrypted[SCRYPT_LENGTH:]
 
     else:
@@ -69,7 +67,7 @@ def decode_pair_from_encrypted_json(json_data: Union[str, dict], passphrase: str
     nonce = encrypted[0:NONCE_LENGTH]
     message = encrypted[NONCE_LENGTH:]
 
-    secret_box = SecretBox(key=password)
+    secret_box = nacl.secret.SecretBox(key=password)
     decrypted = secret_box.decrypt(message, nonce)
 
     # Decode PKCS8 message
@@ -78,7 +76,7 @@ def decode_pair_from_encrypted_json(json_data: Union[str, dict], passphrase: str
     if 'sr25519' in json_data['encoding']['content']:
         # Secret key from PolkadotJS is an Ed25519 expanded secret key, so has to be converted
         # https://github.com/polkadot-js/wasm/blob/master/packages/wasm-crypto/src/rs/sr25519.rs#L125
-        converted_public_key, secret_key = pair_from_ed25519_secret_key(secret_key)
+        converted_public_key, secret_key = sr25519.pair_from_ed25519_secret_key(secret_key)
         assert(public_key == converted_public_key)
 
     return secret_key, public_key
@@ -129,9 +127,9 @@ def encode_pair(public_key: bytes, private_key: bytes, passphrase: str) -> bytes
     message = encode_pkcs8(public_key, private_key)
 
     salt = urandom(SALT_LENGTH)
-    password = scrypt(passphrase.encode(), salt, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P, dklen=32, maxmem=2 ** 26)
+    password = nacl.hashlib.scrypt(passphrase.encode(), salt, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P, dklen=32, maxmem=2 ** 26)
 
-    secret_box = SecretBox(key=password)
+    secret_box = nacl.secret.SecretBox(key=password)
     message = secret_box.encrypt(message)
 
     scrypt_params = SCRYPT_N.to_bytes(4, 'little') + SCRYPT_P.to_bytes(4, 'little') + SCRYPT_R.to_bytes(4, 'little')

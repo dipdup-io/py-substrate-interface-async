@@ -25,7 +25,7 @@ import json
 import logging
 
 from aiohttp import ClientSession
-from typing import Callable, Optional, Union, List
+from typing import Any, Callable, Optional, Union, List
 
 from websocket import create_connection, WebSocketConnectionClosedException
 
@@ -171,6 +171,11 @@ class SubstrateInterface:
 
         self.reload_type_registry(use_remote_preset=False, auto_discover=False)
 
+    @property
+    def next_request_id(self):
+        self.request_id += 1
+        return self.request_id
+
     @cached_property
     def session(self):
         return ClientSession()
@@ -244,7 +249,7 @@ class SubstrateInterface:
 
         return name in self.config['rpc_methods']
 
-    async def rpc_request(self, method, params, result_handler=None):
+    async def rpc_request(self, method: str, params: Any, result_handler: Callable | None = None) -> Any:
         """
         Method that handles the actual RPC request to the Substrate node. The other implemented functions eventually
         use this method to perform the request.
@@ -260,97 +265,101 @@ class SubstrateInterface:
         a dict with the parsed result of the request.
         """
 
-        request_id = self.request_id
-        self.request_id += 1
+        if self.websocket:
+            return await self.websocket_request(method=method, params=params, result_handler=result_handler)
 
+        if result_handler:
+            raise ConfigurationError("Result handlers only available for websockets (ws://) connections")
+        return await self.http_request(method=method, params=params)
+
+    async def websocket_request(self, method: str, params: Any, result_handler: Callable | None = None) -> Any:
+        request_id = self.next_request_id
         payload = {
             "jsonrpc": "2.0",
             "method": method,
             "params": params,
             "id": request_id
         }
+        try:
+            self.websocket.send(json.dumps(payload))
+        except WebSocketConnectionClosedException:
+            if self.config.get('auto_reconnect') and self.url:
+                # Try to reconnect websocket and retry rpc_request
+                self.debug_message("Connection Closed; Trying to reconnecting...")
+                self.connect_websocket()
 
-        self.debug_message('RPC request #{}: "{}"'.format(request_id, method))
+                return await self.rpc_request(method=method, params=params, result_handler=result_handler)
+            else:
+                # websocket connection is externally created, re-raise exception
+                raise
 
-        if self.websocket:
-            try:
-                self.websocket.send(json.dumps(payload))
-            except WebSocketConnectionClosedException:
-                if self.config.get('auto_reconnect') and self.url:
-                    # Try to reconnect websocket and retry rpc_request
-                    self.debug_message("Connection Closed; Trying to reconnecting...")
-                    self.connect_websocket()
+        update_nr = 0
+        json_body = None
+        subscription_id = None
 
-                    return await self.rpc_request(method=method, params=params, result_handler=result_handler)
-                else:
-                    # websocket connection is externally created, re-raise exception
-                    raise
+        while json_body is None:
+            # Search for subscriptions
+            for message, remove_message in list_remove_iter(self.__rpc_message_queue):
 
-            update_nr = 0
-            json_body = None
-            subscription_id = None
+                # Check if result message is matching request ID
+                if 'id' in message and message['id'] == request_id:
 
-            while json_body is None:
-                # Search for subscriptions
-                for message, remove_message in list_remove_iter(self.__rpc_message_queue):
+                    remove_message()
 
-                    # Check if result message is matching request ID
-                    if 'id' in message and message['id'] == request_id:
+                    # Check if response has error
+                    if 'error' in message:
+                        raise SubstrateRequestException(message['error'])
 
-                        remove_message()
+                    # If result handler is set, pass result through and loop until handler return value is set
+                    if callable(result_handler):
 
-                        # Check if response has error
-                        if 'error' in message:
-                            raise SubstrateRequestException(message['error'])
+                        # Set subscription ID and only listen to messages containing this ID
+                        subscription_id = message['result']
+                        self.debug_message(f"Websocket subscription [{subscription_id}] created")
 
-                        # If result handler is set, pass result through and loop until handler return value is set
-                        if callable(result_handler):
+                    else:
+                        json_body = message
 
-                            # Set subscription ID and only listen to messages containing this ID
-                            subscription_id = message['result']
-                            self.debug_message(f"Websocket subscription [{subscription_id}] created")
+            # Process subscription updates
+            for message, remove_message in list_remove_iter(self.__rpc_message_queue):
+                # Check if message is meant for this subscription
+                if 'params' in message and message['params']['subscription'] == subscription_id:
 
-                        else:
-                            json_body = message
+                    remove_message()
 
-                # Process subscription updates
-                for message, remove_message in list_remove_iter(self.__rpc_message_queue):
-                    # Check if message is meant for this subscription
-                    if 'params' in message and message['params']['subscription'] == subscription_id:
+                    self.debug_message(f"Websocket result [{subscription_id} #{update_nr}]: {message}")
 
-                        remove_message()
+                    # Call result_handler with message for processing
+                    callback_result = result_handler(message, update_nr, subscription_id)
+                    if callback_result is not None:
+                        json_body = callback_result
 
-                        self.debug_message(f"Websocket result [{subscription_id} #{update_nr}]: {message}")
+                    update_nr += 1
 
-                        # Call result_handler with message for processing
-                        callback_result = result_handler(message, update_nr, subscription_id)
-                        if callback_result is not None:
-                            json_body = callback_result
+            # Read one more message to queue
+            if json_body is None:
+                self.__rpc_message_queue.append(json.loads(self.websocket.recv()))
 
-                        update_nr += 1
+        return json_body
 
-                # Read one more message to queue
-                if json_body is None:
-                    self.__rpc_message_queue.append(json.loads(self.websocket.recv()))
+    async def http_request(self, method, params):
+        payload = {
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params,
+            "id": self.next_request_id,
+        }
+        async with self.session.request("POST", self.url, data=json.dumps(payload), headers=self.default_headers) as response:
+            if response.status != 200:
+                raise SubstrateRequestException(
+                    "RPC request failed with HTTP status code {}".format(response.status))
 
-        else:
+            json_body = await response.json()
 
-            if result_handler:
-                raise ConfigurationError("Result handlers only available for websockets (ws://) connections")
-
-            async with self.session.request("POST", self.url, data=json.dumps(payload), headers=self.default_headers) as response:
-
-
-                if response.status != 200:
-                    raise SubstrateRequestException(
-                        "RPC request failed with HTTP status code {}".format(response.status))
-
-                json_body = await response.json()
-
-            # Check if response has error
-            if 'error' in json_body:
-                raise SubstrateRequestException(json_body['error'])
-
+        # Check if response has error
+        if 'error' in json_body:
+            raise SubstrateRequestException(json_body['error'])
+        
         return json_body
 
     async def init_props(self):

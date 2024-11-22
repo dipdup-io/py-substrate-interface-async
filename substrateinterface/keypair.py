@@ -36,20 +36,18 @@ from .utils.ecdsa_helpers import mnemonic_to_ecdsa_private_key, ecdsa_verify, ec
 from .utils.encrypted_json import decode_pair_from_encrypted_json, encode_pair
 
 try:
-    from bip39 import bip39_to_mini_secret, bip39_generate, bip39_validate  # type: ignore[import-untyped]
+    import bip39  # type: ignore[import-untyped]
     import sr25519  # type: ignore[import-untyped]
     import ed25519_zebra  # type: ignore[import-untyped]
     import nacl.bindings
     import nacl.public
-    from eth_keys.datatypes import PrivateKey
+    import eth_keys.datatypes
 except ImportError:
-    bip39_to_mini_secret = CryptoExtraFallback()
-    bip39_generate = CryptoExtraFallback()
-    bip39_validate = CryptoExtraFallback()
+    bip39 = CryptoExtraFallback()
     sr25519 = CryptoExtraFallback()
     ed25519_zebra = CryptoExtraFallback()
     nacl = CryptoExtraFallback()
-    PrivateKey = CryptoExtraFallback()
+    eth_keys = CryptoExtraFallback()
 
 __all__ = ['Keypair', 'KeypairType', 'MnemonicLanguageCode']
 
@@ -130,7 +128,7 @@ class Keypair:
                     public_key = sr25519.public_from_secret_key(private_key)
 
             if self.crypto_type == KeypairType.ECDSA:
-                private_key_obj = PrivateKey(private_key)
+                private_key_obj = eth_keys.datatypes.PrivateKey(private_key)
                 public_key = private_key_obj.public_key.to_address()
                 ss58_address = private_key_obj.public_key.to_checksum_address()
 
@@ -174,7 +172,7 @@ class Keypair:
         -------
         str: Seed phrase
         """
-        return bip39_generate(words, language_code)
+        return bip39.bip39_generate(words, language_code)
 
     @classmethod
     def validate_mnemonic(cls, mnemonic: str, language_code: str = MnemonicLanguageCode.ENGLISH) -> bool:
@@ -190,7 +188,7 @@ class Keypair:
         -------
         bool
         """
-        return bip39_validate(mnemonic, language_code)
+        return bip39.bip39_validate(mnemonic, language_code)
 
     @classmethod
     def create_from_mnemonic(cls, mnemonic: str, ss58_format=42, crypto_type=KeypairType.SR25519,
@@ -218,7 +216,7 @@ class Keypair:
             keypair = cls.create_from_private_key(private_key, ss58_format=ss58_format, crypto_type=crypto_type)
 
         else:
-            seed_array = bip39_to_mini_secret(mnemonic, "", language_code)
+            seed_array = bip39.bip39_to_mini_secret(mnemonic, "", language_code)
 
             keypair = cls.create_from_seed(
                 seed_hex=binascii.hexlify(bytearray(seed_array)).decode("ascii"),
