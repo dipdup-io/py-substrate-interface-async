@@ -33,12 +33,12 @@ dependencies = [
 [project.optional-dependencies]
 full = [
     "base58>=2.1.1",
-    "bip39>=0.0.2",
     "certifi>=2024.8.30",
     "ecdsa>=0.19.0",
     "eth-keys>=0.6.0",
     "eth-utils>=5.1.0",
     "idna>=3.10",
+    "py-bip39-bindings>=0.1.12",
     "py-ed25519-zebra-bindings>=1.1.0",
     "py-sr25519-bindings>=0.2.1",
     "pycryptodome>=3.21.0",
@@ -46,7 +46,7 @@ full = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/didup-io/py-substrate-interface-async"
+"Homepage" = "https://github.com/dipdup-io/py-substrate-interface-async"
 
 [dependency-groups]
 dev = [

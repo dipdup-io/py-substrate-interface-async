@@ -28,7 +28,7 @@ async def main():
 
     keypair = Keypair.create_from_uri('//Alice')
 
-    call = substrate.compose_call(
+    call = await substrate.compose_call(
         call_module='Balances',
         call_function='transfer_keep_alive',
         call_params={

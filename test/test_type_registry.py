@@ -33,7 +33,7 @@ class KusamaTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
             type_registry_preset='kusama'
         )
 
-    def test_type_registry_compatibility(self):
+    async def test_type_registry_compatibility(self):
 
         for scale_type in self.substrate.get_type_registry():
             obj = self.substrate.runtime_config.get_decoder_class(scale_type)
@@ -51,7 +51,7 @@ class PolkadotTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
             type_registry_preset='polkadot'
         )
 
-    def test_type_registry_compatibility(self):
+    async def test_type_registry_compatibility(self):
 
         for scale_type in self.substrate.get_type_registry():
 
@@ -70,7 +70,7 @@ class RococoTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
             type_registry_preset='rococo'
         )
 
-    def test_type_registry_compatibility(self):
+    async def test_type_registry_compatibility(self):
 
         for scale_type in self.substrate.get_type_registry():
 
@@ -89,7 +89,7 @@ class RococoTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
 #             type_registry_preset='development'
 #         )
 #
-#     def test_type_registry_compatibility(self):
+#     async def test_type_registry_compatibility(self):
 #
 #         for scale_type in self.substrate.get_type_registry():
 #
@@ -107,11 +107,11 @@ class ReloadTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
             type_registry_preset='test'
         )
 
-    def test_initial_correct_type_local(self):
+    async def test_initial_correct_type_local(self):
         decoding_class = self.substrate.runtime_config.type_registry['types']['index']
         self.assertEqual(self.substrate.runtime_config.get_decoder_class('u32'), decoding_class)
 
-    def test_reloading_use_remote_preset(self):
+    async def test_reloading_use_remote_preset(self):
 
         # Intentionally overwrite type in local preset
         u32_cls = self.substrate.runtime_config.get_decoder_class('u32')
@@ -126,7 +126,7 @@ class ReloadTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(u32_cls, self.substrate.runtime_config.get_decoder_class('Index'))
 
-    def test_reloading_use_local_preset(self):
+    async def test_reloading_use_local_preset(self):
 
         # Intentionally overwrite type in local preset
         u32_cls = self.substrate.runtime_config.get_decoder_class('u32')
@@ -165,7 +165,7 @@ class AutodiscoverV14RuntimeTestCase(unittest.IsolatedAsyncioTestCase):
 
         class MockedSubstrateInterface(SubstrateInterface):
 
-            def rpc_request(self, method, params, result_handler=None):
+            async def rpc_request(self, method, params, result_handler=None):
 
                 if method == 'system_chain':
                     return {
@@ -174,27 +174,27 @@ class AutodiscoverV14RuntimeTestCase(unittest.IsolatedAsyncioTestCase):
                         'id': self.request_id
                     }
 
-                return super().rpc_request(method, params, result_handler)
+                return await super().rpc_request(method, params, result_handler)
 
         self.substrate = MockedSubstrateInterface(
             url=settings.KUSAMA_NODE_URL
         )
 
-    def test_type_reg_preset_applied(self):
-        self.substrate.init_runtime()
+    async def test_type_reg_preset_applied(self):
+        await self.substrate.init_runtime()
         self.assertIsNotNone(self.substrate.runtime_config.get_decoder_class('SpecificTestType'))
 
 
 class AutodetectAddressTypeTestCase(unittest.IsolatedAsyncioTestCase):
 
-    def test_default_substrate_address(self):
+    async def test_default_substrate_address(self):
         substrate = SubstrateInterface(
             url=settings.POLKADOT_NODE_URL, auto_discover=False
         )
 
         keypair_alice = Keypair.create_from_uri('//Alice', ss58_format=substrate.ss58_format)
 
-        call = substrate.compose_call(
+        call = await substrate.compose_call(
             call_module='Balances',
             call_function='transfer_keep_alive',
             call_params={
@@ -203,18 +203,18 @@ class AutodetectAddressTypeTestCase(unittest.IsolatedAsyncioTestCase):
             }
         )
 
-        extrinsic = substrate.create_signed_extrinsic(call, keypair_alice)
+        extrinsic = await substrate.create_signed_extrinsic(call, keypair_alice)
 
         self.assertEqual(extrinsic.value['address'], f'0x{keypair_alice.public_key.hex()}')
 
-    def test_eth_address(self):
+    async def test_eth_address(self):
         substrate = SubstrateInterface(
             url=settings.MOONBEAM_NODE_URL, auto_discover=False
         )
 
         keypair_alice = Keypair.create_from_mnemonic(Keypair.generate_mnemonic(), crypto_type=KeypairType.ECDSA)
 
-        call = substrate.compose_call(
+        call = await substrate.compose_call(
             call_module='Balances',
             call_function='transfer_keep_alive',
             call_params={
@@ -223,7 +223,7 @@ class AutodetectAddressTypeTestCase(unittest.IsolatedAsyncioTestCase):
             }
         )
 
-        extrinsic = substrate.create_signed_extrinsic(call, keypair_alice)
+        extrinsic = await substrate.create_signed_extrinsic(call, keypair_alice)
 
         self.assertEqual(extrinsic.value['address'], f'0x{keypair_alice.public_key.hex()}')
 

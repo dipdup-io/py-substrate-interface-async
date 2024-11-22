@@ -179,7 +179,7 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_valid_extrinsics(self):
 
-        block = self.substrate.get_block(
+        block = await self.substrate.get_block(
             block_hash="0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93"
         )
         extrinsics = block['extrinsics']
@@ -188,9 +188,9 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(extrinsics[0]['call']['call_function'].name, 'set')
         self.assertEqual(extrinsics[0]['call']['call_args']['now'], 1611744282004)
 
-    def test_get_by_block_number(self):
+    async def test_get_by_block_number(self):
 
-        block = self.substrate.get_block(
+        block = await self.substrate.get_block(
             block_number=100
         )
         extrinsics = block['extrinsics']
@@ -199,43 +199,43 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(extrinsics[0]['call']['call_function'].name, 'set')
         self.assertEqual(extrinsics[0]['call']['call_args']['now'], 1611744282004)
 
-    def test_get_block_by_head(self):
+    async def test_get_block_by_head(self):
 
-        block = self.substrate.get_block()
+        block = await self.substrate.get_block()
         self.assertEqual('0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93', block['header']['hash'])
 
-    def test_get_block_by_finalized_head(self):
+    async def test_get_block_by_finalized_head(self):
 
-        block = self.substrate.get_block(finalized_only=True)
+        block = await self.substrate.get_block(finalized_only=True)
         self.assertEqual('0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93', block['header']['hash'])
 
-    def test_get_block_header(self):
+    async def test_get_block_header(self):
 
-        block = self.substrate.get_block_header(
+        block = await self.substrate.get_block_header(
             block_number=100
         )
         self.assertNotIn('extrinsics', block)
 
-    def test_get_block_header_by_head(self):
+    async def test_get_block_header_by_head(self):
 
-        block = self.substrate.get_block_header()
+        block = await self.substrate.get_block_header()
         self.assertEqual('0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93', block['header']['hash'])
 
-    def test_get_block_header_by_finalized_head(self):
+    async def test_get_block_header_by_finalized_head(self):
 
-        block = self.substrate.get_block_header(finalized_only=True)
+        block = await self.substrate.get_block_header(finalized_only=True)
         self.assertEqual('0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93', block['header']['hash'])
 
-    def test_get_extrinsics_decoding_error(self):
+    async def test_get_extrinsics_decoding_error(self):
 
         with self.assertRaises(RemainingScaleBytesNotEmptyException):
             self.substrate.get_block(
                 block_hash="0x40b98c29466fa76eeee21008b50d5cb5d7220712ead554eb97a5fd6ba4bc31b5"
             )
 
-    def test_get_extrinsics_ignore_decoding_error(self):
+    async def test_get_extrinsics_ignore_decoding_error(self):
 
-        block = self.substrate.get_block(
+        block = await self.substrate.get_block(
             block_hash="0x40b98c29466fa76eeee21008b50d5cb5d7220712ead554eb97a5fd6ba4bc31b5",
             ignore_decoding_errors=True
         )
@@ -247,22 +247,22 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(extrinsics[2].value['call']['call_args'][0]['value'], 1611744282004)
         self.assertEqual(extrinsics[3], None)
 
-    def test_include_author(self):
+    async def test_include_author(self):
 
-        block = self.substrate.get_block(
+        block = await self.substrate.get_block(
             block_hash="0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93", include_author=False
         )
 
         self.assertNotIn('author', block)
 
-        block = self.substrate.get_block(
+        block = await self.substrate.get_block(
             block_hash="0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93", include_author=True
         )
 
         self.assertIn('author', block)
         self.assertEqual('5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY', block['author'])
 
-    def test_subscribe_block_headers(self):
+    async def test_subscribe_block_headers(self):
 
         def subscription_handler(obj, update_nr, subscription_id):
             return f"callback: {obj['header']['number']}"
@@ -271,7 +271,7 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual("callback: 103", result)
 
-    def test_check_requirements(self):
+    async def test_check_requirements(self):
         self.assertRaises(ValueError, self.substrate.get_block,
                           block_hash='0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93',
                           block_number=223
@@ -289,13 +289,13 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
                           finalized_only=True
                           )
 
-    def test_block_author_babe(self):
+    async def test_block_author_babe(self):
         block = self.babe_substrate.get_block(include_author=True)
 
         self.assertIn('author', block)
         self.assertIsNotNone(block['author'])
 
-    def test_block_author_aura(self):
+    async def test_block_author_aura(self):
         block = self.aura_substrate.get_block(include_author=True)
 
         self.assertIn('author', block)

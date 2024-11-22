@@ -373,25 +373,25 @@ class SubstrateInterface:
     @property
     def name(self):
         if self.__name is None:
-            raise Exception
+            raise Exception('Call init_props() first')
         return self.__name
 
     @property
     def properties(self):
         if self.__properties is None:
-            raise Exception
+            raise Exception('Call init_props() first')
         return self.__properties
 
     @property
     def chain(self):
         if self.__chain is None:
-            raise Exception
+            raise Exception('Call init_props() first')
         return self.__chain
 
     @property
     def version(self):
         if self.__version is None:
-            raise Exception
+            raise Exception('Call init_props() first')
         return self.__version
 
     @property

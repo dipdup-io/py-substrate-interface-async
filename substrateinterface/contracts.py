@@ -170,7 +170,8 @@ class ContractMetadata:
                     self.type_registry[idx] = self.get_type_string_for_metadata_type(idx)
 
         else:
-            self.substrate.init_runtime()
+            # FIXME
+            # await self.substrate.init_runtime()
             portable_registry = self.substrate.runtime_config.create_scale_object('PortableRegistry')
             portable_registry.encode({"types": self.metadata_dict["types"]})
 
@@ -178,7 +179,7 @@ class ContractMetadata:
                 portable_registry['types'], prefix=self.type_string_prefix
             )
 
-    def generate_constructor_data(self, name, args: dict | None = None) -> ScaleBytes:
+    async def generate_constructor_data(self, name, args: dict | None = None) -> ScaleBytes:
         """
         Compose the data field used in the "Contracts.instantiate" call, finding the selectors and encoded the args
         of given constructor
@@ -203,7 +204,7 @@ class ContractMetadata:
                     if arg['label'] not in args:
                         raise ValueError(f"Argument \"{arg['label']}\" is missing")
                     else:
-                        data += self.substrate.encode_scale(
+                        data += await self.substrate.encode_scale(
                             type_string=self.get_type_string_for_metadata_type(arg['type']['type']),
                             value=args[arg['label']]
                         )
@@ -488,8 +489,8 @@ class ContractExecutionReceipt(ExtrinsicReceipt):
             contract_address=contract_address
         )
 
-    def process_events(self):
-        super().process_events()
+    async def process_events(self):
+        await super().process_events()
 
         if self.triggered_events:
 
@@ -507,7 +508,7 @@ class ContractExecutionReceipt(ExtrinsicReceipt):
                             for topic in event.value['topics']:
                                 event_id = self.contract_metadata.get_event_id_by_topic(topic)
                                 if event_id is not None:
-                                    event_bytes = self.substrate.create_scale_object("U8").encode(event_id).data
+                                    event_bytes = await self.substrate.create_scale_object("U8").encode(event_id).data
                                     contract_data = event_bytes + contract_data
 
                         # Create contract event
@@ -538,7 +539,8 @@ class ContractExecutionReceipt(ExtrinsicReceipt):
     @property
     def contract_events(self):
         if self.__contract_events is None:
-            self.process_events()
+            raise Exception('Call process_events() first')
+            # self.process_events()
 
         return self.__contract_events
 

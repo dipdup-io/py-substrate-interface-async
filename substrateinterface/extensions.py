@@ -75,7 +75,7 @@ class SearchExtension(Extension):
     Type of `Extension` that implements functionality to improve and enhance search capability
     """
 
-    def filter_events(self, **kwargs) -> list:
+    async def filter_events(self, **kwargs) -> list:
         """
         Filters events to match provided search criteria e.g. block range, pallet name, accountID in attributes
 
@@ -89,7 +89,7 @@ class SearchExtension(Extension):
         """
         raise NotImplementedError()
 
-    def filter_extrinsics(self, **kwargs) -> list:
+    async def filter_extrinsics(self, **kwargs) -> list:
         """
         Filters extrinsics to match provided search criteria e.g. block range, pallet name, signed by accountID
 
@@ -103,7 +103,7 @@ class SearchExtension(Extension):
         """
         raise NotImplementedError()
 
-    def search_block_number(self, block_datetime: datetime, block_time: int = 6, **kwargs) -> int:
+    async def search_block_number(self, block_datetime: datetime, block_time: int = 6, **kwargs) -> int:
         """
         Search corresponding block number for provided `block_datetime`. the prediction tolerance is provided with
         `block_time`
@@ -120,7 +120,7 @@ class SearchExtension(Extension):
         """
         raise NotImplementedError()
 
-    def get_block_timestamp(self, block_number: int) -> int:
+    async def get_block_timestamp(self, block_number: int) -> int:
         """
         Return a UNIX timestamp for given `block_number`.
 
@@ -140,11 +140,11 @@ class SubstrateNodeExtension(SearchExtension):
     Implementation of `SearchExtension` using only Substrate RPC methods. Could be significant inefficient.
     """
 
-    def filter_extrinsics(self, block_start: int | None = None, block_end: int | None = None, ss58_address: str | None = None,
+    async def filter_extrinsics(self, block_start: int | None = None, block_end: int | None = None, ss58_address: str | None = None,
                           pallet_name: str | None = None, call_name: str | None = None) -> list:
 
         if block_end is None:
-            block_end = self.substrate.get_block_number(None)
+            block_end = await self.substrate.get_block_number(None)
 
         if block_start is None:
             block_start = block_end
@@ -155,9 +155,9 @@ class SubstrateNodeExtension(SearchExtension):
         result = []
 
         for block_number in range(block_start, block_end + 1):
-            block_hash = self.substrate.get_block_hash(block_number)
+            block_hash = await self.substrate.get_block_hash(block_number)
 
-            for extrinsic in self.substrate.get_extrinsics(block_hash=block_hash):
+            for extrinsic in await self.substrate.get_extrinsics(block_hash=block_hash):
                 if pallet_name is not None and pallet_name != extrinsic.value['call']['call_module']:
                     continue
 
@@ -173,11 +173,11 @@ class SubstrateNodeExtension(SearchExtension):
 
         self.max_block_range: int = max_block_range
 
-    def filter_events(self, block_start: int | None = None, block_end: int | None = None, pallet_name: str | None = None,
+    async def filter_events(self, block_start: int | None = None, block_end: int | None = None, pallet_name: str | None = None,
                       event_name: str | None = None, account_id: str | None = None) -> list:
 
         if block_end is None:
-            block_end = self.substrate.get_block_number(None)
+            block_end = await self.substrate.get_block_number(None)
 
         if block_start is None:
             block_start = block_end
@@ -194,8 +194,8 @@ class SubstrateNodeExtension(SearchExtension):
         self.debug_message(f"Retrieving events from #{block_start} to #{block_end}")
 
         for block_number in range(block_start, block_end + 1):
-            block_hash = self.substrate.get_block_hash(block_number)
-            for event in self.substrate.get_events(block_hash=block_hash):
+            block_hash = await self.substrate.get_block_hash(block_number)
+            for event in await self.substrate.get_events(block_hash=block_hash):
                 if pallet_name is not None and pallet_name != event.value['event']['module_id']:
                     continue
 
@@ -215,14 +215,14 @@ class SubstrateNodeExtension(SearchExtension):
 
         return result
 
-    def get_block_timestamp(self, block_number: int) -> int:
-        extrinsics = self.filter_extrinsics(
+    async def get_block_timestamp(self, block_number: int) -> int:
+        extrinsics = await self.filter_extrinsics(
             block_start=block_number, block_end=block_number, pallet_name="Timestamp",
             call_name="set"
         )
         return extrinsics[0].value['call']['call_args'][0]['value'] / 1000
 
-    def search_block_number(self, block_datetime: datetime, block_time: int = 6, **kwargs) -> int:
+    async def search_block_number(self, block_datetime: datetime, block_time: int = 6, **kwargs) -> int:
         """
         Search corresponding block number for provided `block_datetime`. the prediction tolerance is provided with
         `block_time`
@@ -242,8 +242,8 @@ class SubstrateNodeExtension(SearchExtension):
         target_block_timestamp = block_datetime.timestamp()
 
         # Retrieve Timestamp extrinsic for chain tip
-        predicted_block_number = self.substrate.get_block_number(None)
-        current_timestamp = self.get_block_timestamp(predicted_block_number)
+        predicted_block_number = await self.substrate.get_block_number(None)
+        current_timestamp = await self.get_block_timestamp(predicted_block_number)
         current_delta = current_timestamp - target_block_timestamp
 
         self.debug_message(f"Delta {current_delta} sec with chain tip #{predicted_block_number}")
@@ -258,7 +258,7 @@ class SubstrateNodeExtension(SearchExtension):
             if predicted_block_number < 0:
                 raise ValueError(f"Requested datetime points before genesis of chain (#{predicted_block_number})")
 
-            current_timestamp = self.get_block_timestamp(predicted_block_number)
+            current_timestamp = await self.get_block_timestamp(predicted_block_number)
 
             # Predict target block number
             current_delta = current_timestamp - target_block_timestamp

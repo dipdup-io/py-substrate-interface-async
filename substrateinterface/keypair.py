@@ -36,7 +36,7 @@ from .utils.ecdsa_helpers import mnemonic_to_ecdsa_private_key, ecdsa_verify, ec
 from .utils.encrypted_json import decode_pair_from_encrypted_json, encode_pair
 
 try:
-    import bip39  # type: ignore[import-untyped]
+    import bip39.bip39 as bip39  # type: ignore[import-untyped]
     import sr25519  # type: ignore[import-untyped]
     import ed25519_zebra  # type: ignore[import-untyped]
     import nacl.bindings

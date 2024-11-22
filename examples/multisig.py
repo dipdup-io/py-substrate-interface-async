@@ -37,7 +37,7 @@ async def main():
         threshold=2
     )
 
-    call = substrate.compose_call(
+    call = await substrate.compose_call(
         call_module='Balances',
         call_function='transfer_keep_alive',
         call_params={
@@ -49,7 +49,7 @@ async def main():
     # Initiate multisig tx
     extrinsic = substrate.create_multisig_extrinsic(call, keypair_alice, multisig_account, era={'period': 64})
 
-    receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+    receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
     if not receipt.is_success:
         print(f"⚠️ {receipt.error_message}")
@@ -58,7 +58,7 @@ async def main():
     # Finalize multisig tx with other signatory
     extrinsic = substrate.create_multisig_extrinsic(call, keypair_bob, multisig_account, era={'period': 64})
 
-    receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+    receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
     if receipt.is_success:
         print(f"✅ {receipt.triggered_events}")

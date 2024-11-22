@@ -164,12 +164,12 @@ class RPCCompatilibityTestCase(unittest.IsolatedAsyncioTestCase):
         cls.substrate.rpc_request = MagicMock(side_effect=mocked_request)
         cls.substrate.query = MagicMock(side_effect=mocked_query)
 
-    def test_get_block_by_head(self):
+    async def test_get_block_by_head(self):
 
-        block = self.substrate.get_block()
+        block = await self.substrate.get_block()
         self.assertEqual('0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93', block['header']['hash'])
 
-    def test_get_chain_head(self):
+    async def test_get_chain_head(self):
         block_hash = self.substrate.get_chain_head()
         self.assertEqual('0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93', block_hash)
 

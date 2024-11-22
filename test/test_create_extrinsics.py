@@ -47,7 +47,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
         mnemonic = Keypair.generate_mnemonic()
         cls.keypair = Keypair.create_from_mnemonic(mnemonic)
 
-    def test_create_extrinsic_metadata_v14(self):
+    async def test_create_extrinsic_metadata_v14(self):
 
         # Create balance transfer call
         call = self.kusama_substrate.compose_call(
@@ -69,12 +69,12 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(extrinsic['nonce'], 0)
         self.assertEqual(extrinsic['tip'], 1)
 
-    def test_create_mortal_extrinsic(self):
+    async def test_create_mortal_extrinsic(self):
 
         for substrate in [self.kusama_substrate, self.polkadot_substrate]:
 
             # Create balance transfer call
-            call = substrate.compose_call(
+            call = await substrate.compose_call(
                 call_module='Balances',
                 call_function='transfer_keep_alive',
                 call_params={
@@ -83,7 +83,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
                 }
             )
 
-            extrinsic = substrate.create_signed_extrinsic(call=call, keypair=self.keypair, era={'period': 64})
+            extrinsic = await substrate.create_signed_extrinsic(call=call, keypair=self.keypair, era={'period': 64})
 
             try:
                 substrate.submit_extrinsic(extrinsic)
@@ -94,7 +94,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
                 # Extrinsic should be successful if account had balance, eitherwise 'Bad proof' error should be raised
                 pass
 
-    def test_create_batch_extrinsic(self):
+    async def test_create_batch_extrinsic(self):
 
         balance_call = self.polkadot_substrate.compose_call(
             call_module='Balances',
@@ -121,7 +121,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual('Utility', extrinsic.value['call']['call_module'])
         self.assertEqual('batch', extrinsic.value['call']['call_function'])
 
-    def test_create_multisig_extrinsic(self):
+    async def test_create_multisig_extrinsic(self):
 
         call = self.kusama_substrate.compose_call(
             call_module='Balances',
@@ -153,7 +153,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual('Multisig', extrinsic.value['call']['call_module'])
         self.assertEqual('approve_as_multi', extrinsic.value['call']['call_function'])
 
-    def test_create_unsigned_extrinsic(self):
+    async def test_create_unsigned_extrinsic(self):
 
         call = self.kusama_substrate.compose_call(
             call_module='Timestamp',
@@ -166,7 +166,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
         extrinsic = self.kusama_substrate.create_unsigned_extrinsic(call)
         self.assertEqual(str(extrinsic.data), '0x280402000ba09cc0317501')
 
-    def test_payment_info(self):
+    async def test_payment_info(self):
         keypair = Keypair(ss58_address="EaG2CRhJWPb7qmdcJvy3LiWdh26Jreu9Dx6R1rXxPmYXoDk")
 
         call = self.kusama_substrate.compose_call(
@@ -185,7 +185,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertGreater(payment_info['partialFee'], 0)
 
-    def test_generate_signature_payload_lte_256_bytes(self):
+    async def test_generate_signature_payload_lte_256_bytes(self):
 
         call = self.kusama_substrate.compose_call(
             call_module='System',
@@ -199,7 +199,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(signature_payload.length, 256)
 
-    def test_generate_signature_payload_gt_256_bytes(self):
+    async def test_generate_signature_payload_gt_256_bytes(self):
 
         call = self.kusama_substrate.compose_call(
             call_module='System',
@@ -213,7 +213,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(signature_payload.length, 32)
 
-    def test_create_extrinsic_bytes_signature(self):
+    async def test_create_extrinsic_bytes_signature(self):
         # Create balance transfer call
         call = self.kusama_substrate.compose_call(
             call_module='Balances',
@@ -239,7 +239,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(extrinsic.value['signature']['Sr25519'], f'0x{signature_hex[2:]}')
 
-    def test_check_extrinsic_receipt(self):
+    async def test_check_extrinsic_receipt(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0x5bcb59fdfc2ba852dabf31447b84764df85c8f64073757ea800f25b48e63ebd2",
@@ -256,14 +256,14 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(result.is_success)
 
-    def test_extrinsic_receipt_by_identifier(self):
+    async def test_extrinsic_receipt_by_identifier(self):
         receipt = self.polkadot_substrate.retrieve_extrinsic_by_identifier("11529741-2")
         self.assertEqual(receipt.extrinsic.value['address'], '16amaf1FuEFHstAoKjQiq8ZLWR6zjsYTvAiyHupA8DJ9Mhwu')
         self.assertEqual(
             receipt.extrinsic.value['call']['call_args'][0]['value'], '1pg9GBY7Xm5wZSNBr9BrmS978f5g33PGt45PyjiwKpU4hZG'
         )
 
-    def test_extrinsic_receipt_by_hash(self):
+    async def test_extrinsic_receipt_by_hash(self):
         receipt = self.polkadot_substrate.retrieve_extrinsic_by_hash(
             block_hash="0x9f726d0ba1e7622c3df8c9f1eacdd1df03deabfc1d788623fc47f494e18c3f38",
             extrinsic_hash="0xe1ca67a62655d45863be7bf87004a79351bf4a798ba92f666d3a8152bb769d0c"
@@ -273,7 +273,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             receipt.extrinsic.value['call']['call_args'][0]['value'], '1pg9GBY7Xm5wZSNBr9BrmS978f5g33PGt45PyjiwKpU4hZG'
         )
 
-    def test_check_extrinsic_failed_result(self):
+    async def test_check_extrinsic_failed_result(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0xa5f2b9f4b8ea9f357780dd49010c99708f580a02624e4500af24b20b92773100",
@@ -282,11 +282,11 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(result.is_success)
 
-    def test_check_extrinsic_receipt_failed_scaleinfo(self):
+    async def test_check_extrinsic_receipt_failed_scaleinfo(self):
         receipt = self.kusama_substrate.retrieve_extrinsic_by_identifier("15237367-80")
         self.assertFalse(receipt.is_success)
 
-    def test_check_extrinsic_failed_error_message(self):
+    async def test_check_extrinsic_failed_error_message(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0xa5f2b9f4b8ea9f357780dd49010c99708f580a02624e4500af24b20b92773100",
@@ -295,7 +295,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result.error_message['name'], 'LiquidityRestrictions')
 
-    def test_check_extrinsic_failed_error_message2(self):
+    async def test_check_extrinsic_failed_error_message2(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0x6147478693eb1ccbe1967e9327c5db093daf5f87bbf6822b4bd8d3dc3bf4e356",
@@ -304,20 +304,20 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result.error_message['name'], 'MustBeVoter')
 
-    def test_check_extrinsic_failed_error_message_portable_registry(self):
+    async def test_check_extrinsic_failed_error_message_portable_registry(self):
         receipt = self.kusama_substrate.retrieve_extrinsic_by_identifier("11333518-4")
 
         self.assertFalse(receipt.is_success)
         self.assertEqual(881719000, receipt.weight)
         self.assertEqual(receipt.error_message['name'], 'InsufficientBalance')
 
-    def test_check_extrinsic_weight_v2(self):
+    async def test_check_extrinsic_weight_v2(self):
         receipt = self.kusama_substrate.retrieve_extrinsic_by_identifier("14963132-10")
 
         self.assertTrue(receipt.is_success)
         self.assertEqual({'ref_time': 153773000}, receipt.weight)
 
-    def test_check_extrinsic_total_fee_amount(self):
+    async def test_check_extrinsic_total_fee_amount(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0xa5f2b9f4b8ea9f357780dd49010c99708f580a02624e4500af24b20b92773100",
@@ -326,7 +326,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(2583332366, result.total_fee_amount)
 
-    def test_check_extrinsic_total_fee_amount_portable_registry(self):
+    async def test_check_extrinsic_total_fee_amount_portable_registry(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0x5937b3fc03ffc62c84d536c3f1949e030b61ca5c680bfd237726e55a75840d1d",
@@ -335,7 +335,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result.is_success)
         self.assertEqual(161331753, result.total_fee_amount)
 
-    def test_check_extrinsic_total_fee_amount2(self):
+    async def test_check_extrinsic_total_fee_amount2(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0x7347df791b8e47a5eba29c2123783cac638acbe63b4a99024eade4e7805d7ab7",
@@ -344,12 +344,12 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(2749998966, result.total_fee_amount)
 
-    def test_check_extrinsic_total_fee_amount_new_event(self):
+    async def test_check_extrinsic_total_fee_amount_new_event(self):
         receipt = self.polkadot_substrate.retrieve_extrinsic_by_identifier("12031188-2")
 
         self.assertEqual(156673273, receipt.total_fee_amount)
 
-    def test_check_failed_extrinsic_weight(self):
+    async def test_check_failed_extrinsic_weight(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0xa5f2b9f4b8ea9f357780dd49010c99708f580a02624e4500af24b20b92773100",
@@ -358,7 +358,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(216625000, result.weight)
 
-    def test_check_success_extrinsic_weight(self):
+    async def test_check_success_extrinsic_weight(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0x5bcb59fdfc2ba852dabf31447b84764df85c8f64073757ea800f25b48e63ebd2",
@@ -367,7 +367,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(10000, result.weight)
 
-    def test_check_success_extrinsic_weight2(self):
+    async def test_check_success_extrinsic_weight2(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0x7347df791b8e47a5eba29c2123783cac638acbe63b4a99024eade4e7805d7ab7",
@@ -376,7 +376,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(252000000, result.weight)
 
-    def test_check_success_extrinsic_weight_portable_registry(self):
+    async def test_check_success_extrinsic_weight_portable_registry(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0x5937b3fc03ffc62c84d536c3f1949e030b61ca5c680bfd237726e55a75840d1d",
@@ -385,7 +385,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result.is_success)
         self.assertEqual(1234000, result.weight)
 
-    def test_extrinsic_result_set_readonly_attr(self):
+    async def test_extrinsic_result_set_readonly_attr(self):
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,
             extrinsic_hash="0xa5f2b9f4b8ea9f357780dd49010c99708f580a02624e4500af24b20b92773100"
@@ -396,7 +396,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(AttributeError):
             result.triggered_events = False
 
-    def test_extrinsic_result_no_blockhash_check_events(self):
+    async def test_extrinsic_result_no_blockhash_check_events(self):
 
         result = ExtrinsicReceipt(
             substrate=self.kusama_substrate,

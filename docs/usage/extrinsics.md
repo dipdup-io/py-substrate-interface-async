@@ -11,7 +11,7 @@ See [the metadata documentation](https://polkascan.github.io/py-substrate-metada
 _Example:_
 
 ```python
-call = substrate.compose_call(
+call = await substrate.compose_call(
     call_module='Balances',
     call_function='transfer_keep_alive',
     call_params={
@@ -20,10 +20,10 @@ call = substrate.compose_call(
     }
 )
 
-extrinsic = substrate.create_signed_extrinsic(call=call, keypair=keypair)
+extrinsic = await substrate.create_signed_extrinsic(call=call, keypair=keypair)
 
 try:
-    receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+    receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
     print(f"Extrinsic '{receipt.extrinsic_hash}' sent and included in block '{receipt.block_hash}'")
 
 except SubstrateRequestException as e:
@@ -44,7 +44,7 @@ an extrinsic.
 
 Examples:
 ```python
-receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 print(receipt.is_success) # False
 print(receipt.weight) # 216625000
 print(receipt.total_fee_amount) # 2749998966
@@ -92,7 +92,7 @@ multisig_account = substrate.generate_multisig_account(
 _Then initiate the multisig extrinsic by providing the call and a keypair of one of its signatories:_
 
 ```python
-call = substrate.compose_call(
+call = await substrate.compose_call(
     call_module='System',
     call_function='remark_with_event',
     call_params={
@@ -101,7 +101,7 @@ call = substrate.compose_call(
 )
 
 extrinsic = substrate.create_multisig_extrinsic(call, keypair_alice, multisig_account, era={'period': 64})
-receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 ```
 
 _Then a second signatory approves and finalizes the call by providing the same call to another multisig extrinsic:_
@@ -120,7 +120,7 @@ multisig_account = substrate.generate_multisig_account(
 )
 
 extrinsic = substrate.create_multisig_extrinsic(call, keypair_charlie, multisig_account, era={'period': 64})
-receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 ```
 
 The call will be executed when the second and final multisig extrinsic is submitted, condition and state of the multig 
@@ -167,7 +167,7 @@ block. However, it is recommended to use specify an expiry window, so you know a
 extrinsic is not included in a block, it will be invalidated.
 
 ```python 
-extrinsic = substrate.create_signed_extrinsic(call=call, keypair=keypair, era={'period': 64})
+extrinsic = await substrate.create_signed_extrinsic(call=call, keypair=keypair, era={'period': 64})
 ```
 
 The `period` specifies the number of blocks the extrinsic is valid counted from current head.

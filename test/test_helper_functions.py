@@ -99,95 +99,95 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
         #
         # cls.error_substrate.rpc_request = MagicMock(side_effect=mocked_request)
 
-    def test_decode_scale(self):
+    async def test_decode_scale(self):
         self.assertEqual(self.substrate.decode_scale('Compact<u32>', '0x08'), 2)
 
-    def test_encode_scale(self):
+    async def test_encode_scale(self):
         self.assertEqual(self.substrate.encode_scale('Compact<u32>', 3), ScaleBytes('0x0c'))
 
-    def test_create_scale_object(self):
-        scale_obj = self.substrate.create_scale_object("Bytes")
+    async def test_create_scale_object(self):
+        scale_obj = await self.substrate.create_scale_object("Bytes")
 
         self.assertEqual(scale_obj.encode("Test"), ScaleBytes("0x1054657374"))
         self.assertEqual(scale_obj.decode(ScaleBytes("0x1054657374")), "Test")
 
-    def test_get_type_definition(self):
+    async def test_get_type_definition(self):
         info = self.substrate.get_type_definition('MultiSignature')
         self.assertDictEqual({'Ed25519': 'h512', 'Sr25519': 'h512', 'Ecdsa': '[u8; 65]'}, info)
 
         info = self.substrate.get_type_definition('Balance')
         self.assertEqual('u128', info)
 
-    def test_get_metadata(self):
+    async def test_get_metadata(self):
         metadata = self.substrate.get_metadata()
 
         self.assertIsNotNone(metadata)
         self.assertEqual(metadata.__class__.__name__, 'MetadataVersioned')
 
-    def test_get_metadata_modules(self):
-        for module in self.substrate.get_metadata_modules():
+    async def test_get_metadata_modules(self):
+        for module in await self.substrate.get_metadata_modules():
             self.assertIn('module_id', module)
             self.assertIn('name', module)
             self.assertEqual(module['spec_version'], 2023)
 
-    def test_get_metadata_call_function(self):
+    async def test_get_metadata_call_function(self):
         call_function = self.substrate.get_metadata_call_function("Balances", "transfer")
         self.assertEqual("transfer", call_function.name)
         self.assertEqual('dest', call_function.args[0].name)
         self.assertEqual('value', call_function.args[1].name)
 
-    def test_get_metadata_call_functions(self):
+    async def test_get_metadata_call_functions(self):
         call_functions = self.substrate.get_metadata_call_functions()
         self.assertGreater(len(call_functions), 0)
 
-    def test_get_metadata_event(self):
+    async def test_get_metadata_event(self):
         event = self.substrate.get_metadata_event("Balances", "Transfer")
         self.assertEqual("Transfer", event.name)
         self.assertEqual('AccountId', event.args[0].type)
         self.assertEqual('AccountId', event.args[1].type)
         self.assertEqual('Balance', event.args[2].type)
 
-    def test_get_metadata_constant(self):
-        constant = self.substrate.get_metadata_constant("System", "BlockHashCount")
+    async def test_get_metadata_constant(self):
+        constant = await self.substrate.get_metadata_constant("System", "BlockHashCount")
         self.assertEqual("BlockHashCount", constant.name)
         self.assertEqual("BlockNumber", constant.type)
         self.assertEqual("0x60090000", f"0x{constant.constant_value.hex()}")
 
-    def test_get_metadata_constants(self):
-        constants = self.substrate.get_metadata_constants()
+    async def test_get_metadata_constants(self):
+        constants = await self.substrate.get_metadata_constants()
         self.assertGreater(len(constants), 0)
 
-    def test_get_constant(self):
-        constant = self.substrate.get_constant("System", "BlockHashCount")
+    async def test_get_constant(self):
+        constant = await self.substrate.get_constant("System", "BlockHashCount")
         self.assertEqual(2400, constant.value)
 
-        constant = self.substrate.get_constant("Balances", "ExistentialDeposit")
+        constant = await self.substrate.get_constant("Balances", "ExistentialDeposit")
         self.assertEqual(100000000000000, constant.value)
 
         # Also test cache method doesn't mix up results
-        constant = self.substrate.get_constant("System", "BlockHashCount")
+        constant = await self.substrate.get_constant("System", "BlockHashCount")
         self.assertEqual(2400, constant.value)
 
-    def test_get_metadata_storage_function(self):
-        storage = self.substrate.get_metadata_storage_function("System", "Account")
+    async def test_get_metadata_storage_function(self):
+        storage = await self.substrate.get_metadata_storage_function("System", "Account")
         self.assertEqual("Account", storage.name)
         self.assertEqual("AccountId", storage.get_params_type_string()[0])
         self.assertEqual("Blake2_128Concat", storage.type['Map']['hasher'])
 
-    def test_get_metadata_storage_functions(self):
-        storages = self.substrate.get_metadata_storage_functions()
+    async def test_get_metadata_storage_functions(self):
+        storages = await self.substrate.get_metadata_storage_functions()
         self.assertGreater(len(storages), 0)
 
-    def test_get_metadata_error(self):
+    async def test_get_metadata_error(self):
         error = self.substrate.get_metadata_error("System", "InvalidSpecName")
         self.assertEqual("InvalidSpecName", error.name)
         self.assertIsNotNone(error.docs)
 
-    def test_get_metadata_errors(self):
+    async def test_get_metadata_errors(self):
         errors = self.substrate.get_metadata_errors()
         self.assertGreater(len(errors), 0)
 
-    def test_helper_functions_should_return_null_not_exists(self):
+    async def test_helper_functions_should_return_null_not_exists(self):
         self.assertIsNone(self.empty_substrate.get_block_number(
             block_hash="0x6666666666666666666666666666666666666666666666666666666666666666"
         ))
@@ -197,7 +197,7 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(self.empty_substrate.get_block_metadata(block_hash='0x')['result'])
         self.assertIsNone(self.empty_substrate.get_block_runtime_version(block_hash='0x'))
 
-    def test_helper_functions_invalid_input(self):
+    async def test_helper_functions_invalid_input(self):
         self.assertRaises(SubstrateRequestException, self.error_substrate.get_block_number, "0x6666666666666666")
         self.assertRaises(SubstrateRequestException, self.error_substrate.get_block_hash, -1)
         self.assertRaises(SubstrateRequestException, self.error_substrate.get_block_header, '0x')
@@ -205,8 +205,8 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
         self.assertRaises(SubstrateRequestException, self.error_substrate.get_block_runtime_version, '0x')
         self.assertRaises(ValueError, self.error_substrate.query, 'System', 'Account', ['0x'])
 
-    def test_storage_function_param_info(self):
-        storage_function = self.substrate.get_metadata_storage_function("System", "Account")
+    async def test_storage_function_param_info(self):
+        storage_function = await self.substrate.get_metadata_storage_function("System", "Account")
         with self.assertRaises(NotImplementedError):
             storage_function.get_param_info()
 
@@ -214,27 +214,27 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
 class TestHelperFunctionsV14(TestHelperFunctions):
     test_metadata_version = 'V14'
 
-    def test_get_metadata_constant(self):
-        constant = self.substrate.get_metadata_constant("System", "BlockHashCount")
+    async def test_get_metadata_constant(self):
+        constant = await self.substrate.get_metadata_constant("System", "BlockHashCount")
         self.assertEqual("BlockHashCount", constant.name)
         self.assertEqual("scale_info::4", constant.type)
         self.assertEqual("0x60090000", f"0x{constant.constant_value.hex()}")
 
-    def test_get_metadata_storage_function(self):
-        storage = self.substrate.get_metadata_storage_function("System", "Account")
+    async def test_get_metadata_storage_function(self):
+        storage = await self.substrate.get_metadata_storage_function("System", "Account")
         self.assertEqual("Account", storage.name)
         self.assertEqual("scale_info::0", storage.get_params_type_string()[0])
         self.assertEqual("Blake2_128Concat", storage.type['Map']['hashers'][0])
 
-    def test_get_metadata_event(self):
+    async def test_get_metadata_event(self):
         event = self.substrate.get_metadata_event("Balances", "Transfer")
         self.assertEqual("Transfer", event.name)
         self.assertEqual('scale_info::0', event.args[0].type)
         self.assertEqual('scale_info::0', event.args[1].type)
         self.assertEqual('scale_info::6', event.args[2].type)
 
-    def test_storage_function_param_info(self):
-        storage_function = self.substrate.get_metadata_storage_function("System", "Account")
+    async def test_storage_function_param_info(self):
+        storage_function = await self.substrate.get_metadata_storage_function("System", "Account")
         info = storage_function.get_param_info()
         self.assertEqual(1, len(info))
         self.assertEqual('AccountId', info[0])
@@ -243,41 +243,41 @@ class TestHelperFunctionsV14(TestHelperFunctions):
 class TestHelperFunctionsKarura(TestHelperFunctionsV14):
     test_metadata_version = 'karura_test'
 
-    def test_storage_function_param_info(self):
-        storage_function = self.substrate.get_metadata_storage_function("Tokens", "TotalIssuance")
+    async def test_storage_function_param_info(self):
+        storage_function = await self.substrate.get_metadata_storage_function("Tokens", "TotalIssuance")
         info = storage_function.get_param_info()
 
         self.assertEqual(1, len(info))
         self.assertEqual('ACA', info[0]['Token'][0])
 
-        storage_function = self.substrate.get_metadata_storage_function("Rewards", "PoolInfos")
+        storage_function = await self.substrate.get_metadata_storage_function("Rewards", "PoolInfos")
         info = storage_function.get_param_info()
 
         self.assertEqual(1, len(info))
         self.assertEqual('ACA', info[0]['Loans']['Token'][0])
 
-        storage_function = self.substrate.get_metadata_storage_function("Dex", "TradingPairStatuses")
+        storage_function = await self.substrate.get_metadata_storage_function("Dex", "TradingPairStatuses")
         info = storage_function.get_param_info()
 
         self.assertEqual(1, len(info))
         self.assertEqual(2, len(info[0]))
         self.assertEqual('ACA', info[0][0]['Token'][0])
 
-    def test_get_metadata_constant(self):
-        constant = self.substrate.get_metadata_constant("System", "BlockHashCount")
+    async def test_get_metadata_constant(self):
+        constant = await self.substrate.get_metadata_constant("System", "BlockHashCount")
         self.assertEqual("BlockHashCount", constant.name)
         self.assertEqual("scale_info::4", constant.type)
         self.assertEqual("0xb0040000", f"0x{constant.constant_value.hex()}")
 
-    def test_get_constant(self):
-        constant = self.substrate.get_constant("System", "BlockHashCount")
+    async def test_get_constant(self):
+        constant = await self.substrate.get_constant("System", "BlockHashCount")
         self.assertEqual(1200, constant.value)
 
-        constant = self.substrate.get_constant("Balances", "ExistentialDeposit")
+        constant = await self.substrate.get_constant("Balances", "ExistentialDeposit")
         self.assertEqual(100000000000, constant.value)
 
         # Also test cache method doesn't mix up results
-        constant = self.substrate.get_constant("System", "BlockHashCount")
+        constant = await self.substrate.get_constant("System", "BlockHashCount")
         self.assertEqual(1200, constant.value)
 
 
@@ -288,7 +288,7 @@ class TestRPCHelperFunctions(unittest.IsolatedAsyncioTestCase):
         cls.substrate = SubstrateInterface(url=POLKADOT_NODE_URL)
         cls.substrate.orig_rpc_request = cls.substrate.rpc_request
 
-        def mocked_request(method, params):
+        async def mocked_request(method, params):
             if method == 'author_pendingExtrinsics':
                 return {
                     'jsonrpc': '2.0', 'result': [
@@ -297,12 +297,12 @@ class TestRPCHelperFunctions(unittest.IsolatedAsyncioTestCase):
                     'id': 17
                 }
 
-            return cls.substrate.orig_rpc_request(method, params)
+            return await cls.substrate.orig_rpc_request(method, params)
 
         cls.substrate.rpc_request = MagicMock(side_effect=mocked_request)
 
-    def test_pending_extrinsics(self):
-        pending_extrinsics = self.substrate.retrieve_pending_extrinsics()
+    async def test_pending_extrinsics(self):
+        pending_extrinsics = await self.substrate.retrieve_pending_extrinsics()
 
         self.assertEqual(len(pending_extrinsics), 1)
         self.assertIsInstance(pending_extrinsics[0], GenericExtrinsic)
@@ -316,13 +316,13 @@ class SS58HelperTestCase(unittest.IsolatedAsyncioTestCase):
 
         cls.substrate = SubstrateInterface(url=POLKADOT_NODE_URL)
 
-    def test_ss58_decode(self):
+    async def test_ss58_decode(self):
 
         public_key = self.substrate.ss58_decode("15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5")
 
         self.assertEqual("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d", public_key)
 
-    def test_ss58_encode(self):
+    async def test_ss58_encode(self):
         ss58_address = self.substrate.ss58_encode("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")
         self.assertEqual("15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5", ss58_address)
 
@@ -334,7 +334,7 @@ class SS58HelperTestCase(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual("15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5", ss58_address)
 
-    def test_ss58_encode_custom_format(self):
+    async def test_ss58_encode_custom_format(self):
         ss58_address = self.substrate.ss58_encode(
             "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d", ss58_format=2
         )

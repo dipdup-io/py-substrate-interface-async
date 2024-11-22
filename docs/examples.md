@@ -10,7 +10,7 @@ substrate = SubstrateInterface(
 
 keypair = Keypair.create_from_uri('//Alice')
 
-balance_call = substrate.compose_call(
+balance_call = await substrate.compose_call(
     call_module='Balances',
     call_function='transfer_keep_alive',
     call_params={
@@ -19,7 +19,7 @@ balance_call = substrate.compose_call(
     }
 )
 
-call = substrate.compose_call(
+call = await substrate.compose_call(
     call_module='Utility',
     call_function='batch',
     call_params={
@@ -27,7 +27,7 @@ call = substrate.compose_call(
     }
 )
 
-extrinsic = substrate.create_signed_extrinsic(
+extrinsic = await substrate.create_signed_extrinsic(
     call=call,
     keypair=keypair,
     era={'period': 64}
@@ -35,7 +35,7 @@ extrinsic = substrate.create_signed_extrinsic(
 
 
 try:
-    receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+    receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
     print('Extrinsic "{}" included in block "{}"'.format(
         receipt.extrinsic_hash, receipt.block_hash
@@ -71,7 +71,7 @@ substrate = SubstrateInterface(
 
 keypair = Keypair.create_from_uri('//Alice')
 
-call = substrate.compose_call(
+call = await substrate.compose_call(
     call_module='Balances',
     call_function='transfer_keep_alive',
     call_params={
@@ -122,7 +122,7 @@ multisig_account = substrate.generate_multisig_account(
     threshold=2
 )
 
-call = substrate.compose_call(
+call = await substrate.compose_call(
     call_module='Balances',
     call_function='transfer_keep_alive',
     call_params={
@@ -134,7 +134,7 @@ call = substrate.compose_call(
 # Initiate multisig tx
 extrinsic = substrate.create_multisig_extrinsic(call, keypair_alice, multisig_account, era={'period': 64})
 
-receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
 if not receipt.is_success:
     print(f"⚠️ {receipt.error_message}")
@@ -143,7 +143,7 @@ if not receipt.is_success:
 # Finalize multisig tx with other signatory
 extrinsic = substrate.create_multisig_extrinsic(call, keypair_bob, multisig_account, era={'period': 64})
 
-receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
 if receipt.is_success:
     print(f"✅ {receipt.triggered_events}")

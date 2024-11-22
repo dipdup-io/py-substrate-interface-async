@@ -32,7 +32,7 @@ async def main():
 
     keypair = Keypair.create_from_uri('//Alice')
 
-    call = substrate.compose_call(
+    call = await substrate.compose_call(
         call_module='Balances',
         call_function='transfer_keep_alive',
         call_params={
@@ -43,14 +43,14 @@ async def main():
 
     print(call.data.to_hex())
 
-    extrinsic = substrate.create_signed_extrinsic(
+    extrinsic = await substrate.create_signed_extrinsic(
         call=call,
         keypair=keypair,
         era={'period': 64}
     )
 
     try:
-        receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+        receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
         print('Extrinsic "{}" included in block "{}"'.format(
             receipt.extrinsic_hash, receipt.block_hash

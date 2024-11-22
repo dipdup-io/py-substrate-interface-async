@@ -64,9 +64,9 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
 
         cls.kusama_substrate.rpc_request = MagicMock(side_effect=mocked_request)
 
-    def test_claims_claim_map(self):
+    async def test_claims_claim_map(self):
 
-        result = self.kusama_substrate.query_map('Claims', 'Claims', max_results=3)
+        result = await self.kusama_substrate.query_map('Claims', 'Claims', max_results=3)
 
         records = [item for item in result]
 
@@ -76,11 +76,11 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual('0x00002f21194993a750972574e2d82ce8c95078a6', records[1][0].value)
         self.assertEqual('0x0000a940f973ccf435ae9c040c253e1c043c5fb2', records[2][0].value)
 
-    def test_system_account_map_block_hash(self):
+    async def test_system_account_map_block_hash(self):
 
         # Retrieve first two records from System.Account query map
 
-        result = self.kusama_substrate.query_map(
+        result = await self.kusama_substrate.query_map(
             'System', 'Account', page_size=1,
             block_hash="0x587a1e69871c09f2408d724ceebbe16edc4a69139b5df9786e1057c4d041af73"
         )
@@ -101,7 +101,7 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
 
         # Same query map with yield of 2 must result in same records
 
-        result = self.kusama_substrate.query_map(
+        result = await self.kusama_substrate.query_map(
             'System', 'Account', page_size=2,
             block_hash="0x587a1e69871c09f2408d724ceebbe16edc4a69139b5df9786e1057c4d041af73"
         )
@@ -114,8 +114,8 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(record_1_2[0].value, record_2_2[0].value)
         self.assertEqual(record_1_2[1].value, record_2_2[1].value)
 
-    def test_max_results(self):
-        result = self.kusama_substrate.query_map('Claims', 'Claims', max_results=5, page_size=100)
+    async def test_max_results(self):
+        result = await self.kusama_substrate.query_map('Claims', 'Claims', max_results=5, page_size=100)
 
         # Keep iterating shouldn't trigger retrieve next page
         result_count = 0
@@ -124,7 +124,7 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(5, result_count)
 
-        result = self.kusama_substrate.query_map('Claims', 'Claims', max_results=5, page_size=2)
+        result = await self.kusama_substrate.query_map('Claims', 'Claims', max_results=5, page_size=2)
 
         # Keep iterating shouldn't exceed max_results
         result_count = 0
@@ -139,8 +139,8 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(5, result_count)
 
-    def test_result_exhausted(self):
-        result = self.kusama_substrate.query_map(
+    async def test_result_exhausted(self):
+        result = await self.kusama_substrate.query_map(
             module='Claims', storage_function='Claims',
             block_hash='0x2e8047826d028f5cc092f5e694860efbd4f74ee1535424cdf3626a175867db62'
         )
@@ -151,26 +151,26 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(4, result_count)
 
-    def test_non_existing_query_map(self):
+    async def test_non_existing_query_map(self):
         with self.assertRaises(ValueError) as cm:
-            self.kusama_substrate.query_map("Unknown", "StorageFunction")
+            await self.kusama_substrate.query_map("Unknown", "StorageFunction")
 
         self.assertEqual('Pallet "Unknown" not found', str(cm.exception))
 
-    def test_non_map_function_query_map(self):
+    async def test_non_map_function_query_map(self):
         with self.assertRaises(ValueError) as cm:
-            self.kusama_substrate.query_map("System", "Events")
+            await self.kusama_substrate.query_map("System", "Events")
 
         self.assertEqual('Given storage function is not a map', str(cm.exception))
 
-    def test_exceed_maximum_page_size(self):
+    async def test_exceed_maximum_page_size(self):
         with self.assertRaises(SubstrateRequestException):
-            self.kusama_substrate.query_map(
+            await self.kusama_substrate.query_map(
                 'System', 'Account', page_size=9999999
             )
 
-    def test_double_map(self):
-        era_stakers = self.kusama_substrate.query_map(
+    async def test_double_map(self):
+        era_stakers = await self.kusama_substrate.query_map(
             module='Staking',
             storage_function='ErasStakers',
             params=[2185],
@@ -186,8 +186,8 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(records[2][0].ss58_address, 'DfishveZoxSRNRb8FtyS7ignbw6cr32eCY2w6ctLDRM1NQz')
         self.assertEqual(records[3][0].ss58_address, 'HmsTAS1bCtZc9FSq9nqJzZCEkhhSygtXj9TDxNgEWTHnpyQ')
 
-    def test_double_map_page_size(self):
-        era_stakers = self.kusama_substrate.query_map(
+    async def test_double_map_page_size(self):
+        era_stakers = await self.kusama_substrate.query_map(
             module='Staking',
             storage_function='ErasStakers',
             params=[2185],
@@ -204,8 +204,8 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(records[2][0].ss58_address, 'DfishveZoxSRNRb8FtyS7ignbw6cr32eCY2w6ctLDRM1NQz')
         self.assertEqual(records[3][0].ss58_address, 'HmsTAS1bCtZc9FSq9nqJzZCEkhhSygtXj9TDxNgEWTHnpyQ')
 
-    def test_double_map_no_result(self):
-        era_stakers = self.kusama_substrate.query_map(
+    async def test_double_map_no_result(self):
+        era_stakers = await self.kusama_substrate.query_map(
             module='Staking',
             storage_function='ErasStakers',
             params=[21000000],
@@ -213,9 +213,9 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(era_stakers.records, [])
 
-    def test_nested_keys(self):
+    async def test_nested_keys(self):
 
-        result = self.kusama_substrate.query_map(
+        result = await self.kusama_substrate.query_map(
             module='ConvictionVoting',
             storage_function='VotingFor',
             max_results=10
@@ -223,18 +223,18 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(self.kusama_substrate.is_valid_ss58_address(result[0][0][0].value))
         self.assertGreaterEqual(result[0][0][1], 0)
 
-    def test_double_map_too_many_params(self):
+    async def test_double_map_too_many_params(self):
         with self.assertRaises(ValueError) as cm:
-            self.kusama_substrate.query_map(
+            await self.kusama_substrate.query_map(
                 module='Staking',
                 storage_function='ErasStakers',
                 params=[21000000, 2]
             )
         self.assertEqual('Storage function map can accept max 1 parameters, 2 given', str(cm.exception))
 
-    def test_map_with_param(self):
+    async def test_map_with_param(self):
         with self.assertRaises(ValueError) as cm:
-            self.kusama_substrate.query_map(
+            await self.kusama_substrate.query_map(
                 module='System',
                 storage_function='Account',
                 params=[2]

@@ -37,9 +37,9 @@ class QueryTestCase(unittest.IsolatedAsyncioTestCase):
             type_registry_preset='polkadot'
         )
 
-    def test_system_account(self):
+    async def test_system_account(self):
 
-        result = self.kusama_substrate.query(
+        result = await self.kusama_substrate.query(
             module='System',
             storage_function='Account',
             params=['F4xQKRUagnSGjFqafyhajLs94e7Vvzvr8ebwYJceKpr8R7T'],
@@ -50,8 +50,8 @@ class QueryTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(1099945000512, result.value['data']['free'])
         self.assertEqual(result.meta_info['result_found'], True)
 
-    def test_system_account_non_existing(self):
-        result = self.kusama_substrate.query(
+    async def test_system_account_non_existing(self):
+        result = await self.kusama_substrate.query(
             module='System',
             storage_function='Account',
             params=['GSEX8kR4Kz5UZGhvRUCJG93D5hhTAoVZ5tAe6Zne7V42DSi']
@@ -65,18 +65,18 @@ class QueryTestCase(unittest.IsolatedAsyncioTestCase):
                 }
             }, result.value)
 
-    def test_non_existing_query(self):
+    async def test_non_existing_query(self):
         with self.assertRaises(StorageFunctionNotFound) as cm:
-            self.kusama_substrate.query("Unknown", "StorageFunction")
+            await self.kusama_substrate.query("Unknown", "StorageFunction")
 
         self.assertEqual('Pallet "Unknown" not found', str(cm.exception))
 
-    def test_missing_params(self):
+    async def test_missing_params(self):
         with self.assertRaises(ValueError):
-            self.kusama_substrate.query("System", "Account")
+            await self.kusama_substrate.query("System", "Account")
 
-    def test_modifier_default_result(self):
-        result = self.kusama_substrate.query(
+    async def test_modifier_default_result(self):
+        result = await self.kusama_substrate.query(
             module='Staking',
             storage_function='HistoryDepth',
             block_hash='0x4b313e72e3a524b98582c31cd3ff6f7f2ef5c38a3c899104a833e468bb1370a2'
@@ -85,9 +85,9 @@ class QueryTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(84, result.value)
         self.assertEqual(result.meta_info['result_found'], False)
 
-    def test_modifier_option_result(self):
+    async def test_modifier_option_result(self):
 
-        result = self.kusama_substrate.query(
+        result = await self.kusama_substrate.query(
             module='Identity',
             storage_function='IdentityOf',
             params=["DD6kXYJPHbPRbBjeR35s1AR7zDh7W2aE55EBuDyMorQZS2a"],
@@ -97,57 +97,57 @@ class QueryTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result.value)
         self.assertEqual(result.meta_info['result_found'], False)
 
-    def test_identity_hasher(self):
-        result = self.kusama_substrate.query("Claims", "Claims", ["0x00000a9c44f24e314127af63ae55b864a28d7aee"])
+    async def test_identity_hasher(self):
+        result = await self.kusama_substrate.query("Claims", "Claims", ["0x00000a9c44f24e314127af63ae55b864a28d7aee"])
         self.assertEqual(45880000000000, result.value)
 
-    def test_well_known_keys_result(self):
-        result = self.kusama_substrate.query("Substrate", "Code")
+    async def test_well_known_keys_result(self):
+        result = await self.kusama_substrate.query("Substrate", "Code")
         self.assertIsNotNone(result.value)
 
-    def test_well_known_keys_default(self):
-        result = self.kusama_substrate.query("Substrate", "HeapPages")
+    async def test_well_known_keys_default(self):
+        result = await self.kusama_substrate.query("Substrate", "HeapPages")
         self.assertEqual(0, result.value)
 
-    def test_well_known_keys_not_found(self):
+    async def test_well_known_keys_not_found(self):
         with self.assertRaises(StorageFunctionNotFound):
-            self.kusama_substrate.query("Substrate", "Unknown")
+            await self.kusama_substrate.query("Substrate", "Unknown")
 
-    def test_well_known_pallet_version(self):
+    async def test_well_known_pallet_version(self):
 
         sf = self.kusama_substrate.get_metadata_storage_function("Balances", "PalletVersion")
         self.assertEqual(sf.value['name'], ':__STORAGE_VERSION__:')
 
-        result = self.kusama_substrate.query("Balances", "PalletVersion")
+        result = await self.kusama_substrate.query("Balances", "PalletVersion")
         self.assertGreaterEqual(result.value, 1)
 
-    def test_query_multi(self):
+    async def test_query_multi(self):
 
         storage_keys = [
-            self.kusama_substrate.create_storage_key(
+            await self.kusama_substrate.create_storage_key(
                 "System", "Account", ["F4xQKRUagnSGjFqafyhajLs94e7Vvzvr8ebwYJceKpr8R7T"]
             ),
-            self.kusama_substrate.create_storage_key(
+            await self.kusama_substrate.create_storage_key(
                 "System", "Account", ["GSEX8kR4Kz5UZGhvRUCJG93D5hhTAoVZ5tAe6Zne7V42DSi"]
             ),
-            self.kusama_substrate.create_storage_key(
+            await self.kusama_substrate.create_storage_key(
                 "Staking", "Bonded", ["GSEX8kR4Kz5UZGhvRUCJG93D5hhTAoVZ5tAe6Zne7V42DSi"]
             )
         ]
 
-        result = self.kusama_substrate.query_multi(storage_keys)
+        result = await self.kusama_substrate.query_multi(storage_keys)
 
         self.assertEqual(len(result), 3)
         self.assertEqual(result[0][0].params[0], "F4xQKRUagnSGjFqafyhajLs94e7Vvzvr8ebwYJceKpr8R7T")
         self.assertGreater(result[0][1].value['nonce'], 0)
         self.assertEqual(result[1][1].value['nonce'], 0)
 
-    def test_storage_key_unknown(self):
+    async def test_storage_key_unknown(self):
         with self.assertRaises(StorageFunctionNotFound):
-            self.kusama_substrate.create_storage_key("Unknown", "Unknown")
+            await self.kusama_substrate.create_storage_key("Unknown", "Unknown")
 
         with self.assertRaises(StorageFunctionNotFound):
-            self.kusama_substrate.create_storage_key("System", "Unknown")
+            await self.kusama_substrate.create_storage_key("System", "Unknown")
 
 
 if __name__ == '__main__':
