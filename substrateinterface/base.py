@@ -1629,7 +1629,7 @@ class SubstrateInterface:
 
         else:
             # Create signature payload
-            signature_payload = self.generate_signature_payload(
+            signature_payload = await self.generate_signature_payload(
                 call=call, era=era, nonce=nonce, tip=tip, tip_asset_id=tip_asset_id
             )
 
@@ -2291,7 +2291,7 @@ class SubstrateInterface:
 
         for api, methods in self.runtime_config.type_registry["runtime_api"].items():
             for method in methods["methods"].keys():
-                call_functions.append(self.get_metadata_runtime_call_function(api, method))
+                call_functions.append(await self.get_metadata_runtime_call_function(api, method))
 
         return call_functions
 
@@ -2555,7 +2555,7 @@ class SubstrateInterface:
             if finalized_only:
                 raise ValueError('finalized_only cannot be True when block_hash is provided')
 
-        return self.__get_block_handler(
+        return await self.__get_block_handler(
             block_hash=block_hash, ignore_decoding_errors=ignore_decoding_errors, header_only=True,
             include_author=include_author
         )
@@ -2598,7 +2598,7 @@ class SubstrateInterface:
         else:
             block_hash = await self.get_chain_head()
 
-        return self.__get_block_handler(
+        return await self.__get_block_handler(
             block_hash, subscription_handler=subscription_handler, ignore_decoding_errors=ignore_decoding_errors,
             include_author=include_author, finalized_only=finalized_only
         )
@@ -3157,8 +3157,7 @@ class ExtrinsicReceipt:
         int
         """
         if self.__extrinsic_idx is None:
-            raise Exception
-            # self.retrieve_extrinsic()
+            raise Exception('Call retrieve_extrinsic() first')
         return self.__extrinsic_idx
 
     @property
@@ -3171,8 +3170,7 @@ class ExtrinsicReceipt:
         Extrinsic
         """
         if self.__extrinsic is None:
-            raise Exception
-            # self.retrieve_extrinsic()
+            raise Exception('Call retrieve_extrinsic() first')
         return self.__extrinsic
 
     # @property
@@ -3191,7 +3189,7 @@ class ExtrinsicReceipt:
                                  "included, manually set block_hash or use `wait_for_inclusion` when sending extrinsic")
 
             if self.extrinsic_idx is None:
-                self.retrieve_extrinsic()
+                await self.retrieve_extrinsic()
 
             self.__triggered_events = []
 
@@ -3372,7 +3370,7 @@ class ExtrinsicReceipt:
         bool
         """
         if self.__is_success is None:
-            self.process_events()
+            raise Exception('Call process_events() first')
 
         return self.__is_success
 
@@ -3390,7 +3388,7 @@ class ExtrinsicReceipt:
         if self.__error_message is None:
             if self.is_success:
                 return None
-            self.process_events()
+            raise Exception('Call process_events() first')
         return self.__error_message
 
     @property
@@ -3403,8 +3401,7 @@ class ExtrinsicReceipt:
         int (WeightV1) or dict (WeightV2)
         """
         if self.__weight is None:
-            raise Exception
-            # self.process_events()
+            raise Exception('Call process_events() first')
         return self.__weight
 
     @property
@@ -3418,8 +3415,7 @@ class ExtrinsicReceipt:
         int
         """
         if self.__total_fee_amount is None:
-            raise Exception
-            # self.process_events()
+            raise Exception('Call process_events() first')
         return self.__total_fee_amount
 
     # Helper functions
