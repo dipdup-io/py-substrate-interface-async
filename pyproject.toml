@@ -26,7 +26,23 @@ requires-python = ">=3.9,<4"
 dependencies = [
     "aiohttp>=3.11.6",
     "scalecodec>=1.2.11",
+    "xxhash>=3.5.0",
     "websocket-client>=1.8.0",
+]
+
+[project.optional-dependencies]
+full = [
+    "base58>=2.1.1",
+    "bip39>=0.0.2",
+    "certifi>=2024.8.30",
+    "ecdsa>=0.19.0",
+    "eth-keys>=0.6.0",
+    "eth-utils>=5.1.0",
+    "idna>=3.10",
+    "py-ed25519-zebra-bindings>=1.1.0",
+    "py-sr25519-bindings>=0.2.1",
+    "pycryptodome>=3.21.0",
+    "pynacl>=1.5.0",
 ]
 
 [project.urls]
@@ -44,21 +60,6 @@ dev = [
     "pytest>=8.3.3",
     "ruff>=0.7.4",
     "pytest-coverage>=0.0",
-]
-full = [
-    "base58>=2.1.1",
-    "bip39>=0.0.2",
-    "certifi>=2024.8.30",
-    "ecdsa>=0.19.0",
-    "eth-keys>=0.6.0",
-    "eth-utils>=5.1.0",
-    "full>=0.0.3.1",
-    "idna>=3.10",
-    "py-ed25519-zebra-bindings>=1.1.0",
-    "py-sr25519-bindings>=0.2.1",
-    "pycryptodome>=3.21.0",
-    "pynacl>=1.5.0",
-    "xxhash>=3.5.0",
 ]
 
 # [tool.black]
