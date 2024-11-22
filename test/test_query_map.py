@@ -17,7 +17,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from scalecodec.types import GenericAccountId
+from scalecodec.types import GenericAccountId  # type: ignore[import-untyped]
 
 from substrateinterface.exceptions import SubstrateRequestException
 

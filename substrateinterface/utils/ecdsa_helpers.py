@@ -21,7 +21,7 @@ import struct
 from substrateinterface.utils import CryptoExtraFallback
 
 try:
-    from ecdsa.curves import SECP256k1
+    from ecdsa.curves import SECP256k1  # type: ignore[import-untyped]
     from eth_keys.datatypes import Signature, PrivateKey
     from eth_utils import to_checksum_address, keccak as eth_utils_keccak
 except ImportError:

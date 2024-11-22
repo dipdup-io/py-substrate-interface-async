@@ -29,10 +29,10 @@ from typing import Callable, Optional, Union, List
 
 from websocket import create_connection, WebSocketConnectionClosedException
 
-from scalecodec.base import ScaleBytes, RuntimeConfigurationObject, ScaleType
-from scalecodec.types import GenericCall, GenericExtrinsic, MultiAccountId, GenericRuntimeCallDefinition
-from scalecodec.type_registry import load_type_registry_preset
-from scalecodec.updater import update_type_registries
+from scalecodec.base import ScaleBytes, RuntimeConfigurationObject, ScaleType  # type: ignore[import-untyped]
+from scalecodec.types import GenericCall, GenericExtrinsic, MultiAccountId, GenericRuntimeCallDefinition  # type: ignore[import-untyped]
+from scalecodec.type_registry import load_type_registry_preset  # type: ignore[import-untyped]
+from scalecodec.updater import update_type_registries  # type: ignore[import-untyped]
 
 from substrateinterface.constants import WELL_KNOWN_STORAGE_KEYS
 from .extensions import Extension
@@ -1733,7 +1733,7 @@ class SubstrateInterface:
         GenericExtrinsic
         """
         if max_weight is None:
-            payment_info = self.get_payment_info(call, keypair)
+            payment_info = await self.get_payment_info(call, keypair)
             max_weight = payment_info["weight"]
 
         # Check if call has existing approvals
@@ -1746,7 +1746,7 @@ class SubstrateInterface:
 
         # Compose 'as_multi' when final, 'approve_as_multi' otherwise
         if multisig_details.value and len(multisig_details.value['approvals']) + 1 == multisig_account.threshold:
-            multi_sig_call = self.compose_call("Multisig", "as_multi", {
+            multi_sig_call = await self.compose_call("Multisig", "as_multi", {
                 'other_signatories': [s for s in multisig_account.signatories if s != f'0x{keypair.public_key.hex()}'],
                 'threshold': multisig_account.threshold,
                 'maybe_timepoint': maybe_timepoint,
@@ -1755,7 +1755,7 @@ class SubstrateInterface:
                 'max_weight': max_weight
             })
         else:
-            multi_sig_call = self.compose_call("Multisig", "approve_as_multi", {
+            multi_sig_call = await self.compose_call("Multisig", "approve_as_multi", {
                 'other_signatories': [s for s in multisig_account.signatories if s != f'0x{keypair.public_key.hex()}'],
                 'threshold': multisig_account.threshold,
                 'maybe_timepoint': maybe_timepoint,
@@ -2321,7 +2321,7 @@ class SubstrateInterface:
         # Add runtime API types to registry
         self.runtime_config.update_type_registry_types(runtime_api_types)
 
-        runtime_call_def_obj = self.create_scale_object("RuntimeCallDefinition")
+        runtime_call_def_obj = await self.create_scale_object("RuntimeCallDefinition")
         runtime_call_def_obj.encode(runtime_call_def)
 
         return runtime_call_def_obj
@@ -2504,7 +2504,7 @@ class SubstrateInterface:
             else:
                 block_hash = await self.get_chain_head()
 
-        return self.__get_block_handler(
+        return await self.__get_block_handler(
             block_hash=block_hash, ignore_decoding_errors=ignore_decoding_errors, header_only=False,
             include_author=include_author
         )
@@ -2638,7 +2638,7 @@ class SubstrateInterface:
             extrinsic_hash=extrinsic_hash
         )
 
-    def get_extrinsics(self, block_hash: str | None = None, block_number: int | None = None) -> list:
+    async def get_extrinsics(self, block_hash: str | None = None, block_number: int | None = None) -> list:
         """
         Return extrinsics for given block_hash or block_number
 
@@ -2651,7 +2651,7 @@ class SubstrateInterface:
         -------
 
         """
-        block = self.get_block(block_hash=block_hash, block_number=block_number)
+        block = await self.get_block(block_hash=block_hash, block_number=block_number)
         if block:
             return block['extrinsics']
 

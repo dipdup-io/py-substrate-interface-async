@@ -22,8 +22,8 @@ from scalecodec.type_registry import load_type_registry_file
 
 from substrateinterface import SubstrateInterface
 
-from scalecodec.base import ScaleBytes
-from scalecodec.types import Vec, GenericAddress
+from scalecodec.base import ScaleBytes  # type: ignore[import-untyped]
+from scalecodec.types import Vec, GenericAddress  # type: ignore[import-untyped]
 
 
 class RPCCompatilibityTestCase(unittest.IsolatedAsyncioTestCase):

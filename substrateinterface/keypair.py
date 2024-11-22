@@ -16,7 +16,7 @@
 
 import json
 
-from scalecodec.utils.ss58 import ss58_encode, ss58_decode, get_ss58_format
+from scalecodec.utils.ss58 import ss58_encode, ss58_decode, get_ss58_format  # type: ignore[import-untyped]
 
 from scalecodec.base import ScaleBytes
 from typing import Union, Optional
@@ -36,9 +36,9 @@ from .utils.ecdsa_helpers import mnemonic_to_ecdsa_private_key, ecdsa_verify, ec
 from .utils.encrypted_json import decode_pair_from_encrypted_json, encode_pair
 
 try:
-    from bip39 import bip39_to_mini_secret, bip39_generate, bip39_validate
-    import sr25519
-    import ed25519_zebra
+    from bip39 import bip39_to_mini_secret, bip39_generate, bip39_validate  # type: ignore[import-untyped]
+    import sr25519  # type: ignore[import-untyped]
+    import ed25519_zebra  # type: ignore[import-untyped]
     import nacl.bindings
     import nacl.public
     from eth_keys.datatypes import PrivateKey

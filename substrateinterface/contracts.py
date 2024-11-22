@@ -23,8 +23,8 @@ from .utils import version_tuple
 
 from substrateinterface.exceptions import ExtrinsicFailedException, DeployContractFailedException, \
     ContractReadFailedException, ContractMetadataParseException, StorageFunctionNotFound
-from scalecodec.base import ScaleBytes, ScaleType
-from scalecodec.types import GenericContractExecResult
+from scalecodec.base import ScaleBytes, ScaleType  # type: ignore[import-untyped]
+from scalecodec.types import GenericContractExecResult  # type: ignore[import-untyped]
 from substrateinterface.base import SubstrateInterface, Keypair, ExtrinsicReceipt
 
 __all__ = ['ContractExecutionReceipt', 'ContractMetadata', 'ContractCode', 'ContractInstance', 'ContractEvent']
@@ -718,7 +718,7 @@ class ContractCode:
         if not result.is_success:
             raise ExtrinsicFailedException(result.error_message)
 
-        for event in result.triggered_events:
+        for event in await result.triggered_events():
 
             if self.substrate.implements_scaleinfo():
 
@@ -884,4 +884,4 @@ class ContractInstance:
             extrinsic, wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization
         )
 
-        return await ContractExecutionReceipt.create_from_extrinsic_receipt(receipt, self.metadata, self.contract_address)
+        return ContractExecutionReceipt.create_from_extrinsic_receipt(receipt, self.metadata, self.contract_address)

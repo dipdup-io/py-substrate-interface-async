@@ -16,8 +16,8 @@
 
 import unittest
 
-from scalecodec import ScaleBytes
-from scalecodec.exceptions import RemainingScaleBytesNotEmptyException
+from scalecodec import ScaleBytes  # type: ignore[import-untyped]
+from scalecodec.exceptions import RemainingScaleBytesNotEmptyException  # type: ignore[import-untyped]
 from substrateinterface import SubstrateInterface
 from test import settings
 

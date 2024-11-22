@@ -19,14 +19,14 @@ from unittest.mock import MagicMock
 
 from test import settings
 
-from scalecodec.exceptions import RemainingScaleBytesNotEmptyException
+from scalecodec.exceptions import RemainingScaleBytesNotEmptyException  # type: ignore[import-untyped]
 
 from substrateinterface import SubstrateInterface
 
 from test.fixtures import metadata_node_template_hex
 
-from scalecodec.base import ScaleBytes
-from scalecodec.types import Vec, GenericAddress
+from scalecodec.base import ScaleBytes  # type: ignore[import-untyped]
+from scalecodec.types import Vec, GenericAddress  # type: ignore[import-untyped]
 
 
 class BlockTestCase(unittest.IsolatedAsyncioTestCase):
