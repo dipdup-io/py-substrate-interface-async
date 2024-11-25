@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 from test import settings
 
@@ -31,17 +31,17 @@ from scalecodec.types import Vec, GenericAddress  # type: ignore[import-untyped]
 
 class BlockTestCase(unittest.IsolatedAsyncioTestCase):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    async def asyncSetUp(self) -> None:
+        super().setUp()
         self.substrate = SubstrateInterface(url='dummy', ss58_format=42, type_registry_preset='substrate-node-template')
         self.substrate.reload_type_registry()
         metadata_decoder = self.substrate.runtime_config.create_scale_object(
             'MetadataVersioned', ScaleBytes(metadata_node_template_hex)
         )
         metadata_decoder.decode()
-        self.substrate.get_block_metadata = MagicMock(return_value=metadata_decoder)
+        self.substrate.get_block_metadata = AsyncMock(return_value=metadata_decoder)
 
-        def mocked_query(module, storage_function, block_hash):
+        async def mocked_query(module, storage_function, block_hash):
             if module == 'Session' and storage_function == 'Validators':
                 if block_hash == '0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93':
                     vec = Vec()
@@ -52,7 +52,7 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
 
             raise ValueError(f"Unsupported mocked query {module}.{storage_function} @ {block_hash}")
 
-        def mocked_request(method, params, result_handler=None):
+        async def mocked_request(method, params, result_handler=None):
 
             if method in ['chain_getBlockHash', 'chain_getHead', 'chain_getFinalisedHead', 'chain_getFinalizedHead']:
                 return {
@@ -137,7 +137,7 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
             elif method == 'state_getStorageAt':
                 return {'jsonrpc': '2.0', 'result': '0x04be5ddb1579b72e84524fc29e78609e3caf42e85aa118ebfe0b0ad404b5bdd25f', 'id': 11}
             elif method == 'chain_subscribeNewHeads':
-                return result_handler({
+                return await result_handler({
                     "jsonrpc": "2.0",
                     "params": {
                         "result": {
@@ -166,8 +166,8 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
 
             raise ValueError(f"Unsupported mocked method {method}")
 
-        self.substrate.rpc_request = MagicMock(side_effect=mocked_request)
-        self.substrate.query = MagicMock(side_effect=mocked_query)
+        self.substrate.rpc_request = AsyncMock(side_effect=mocked_request)  # type: ignore[method-assign]
+        self.substrate.query = AsyncMock(side_effect=mocked_query)  # type: ignore[method-assign]
 
         self.babe_substrate = SubstrateInterface(
             url=settings.BABE_NODE_URL
@@ -176,6 +176,10 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
         self.aura_substrate = SubstrateInterface(
             url=settings.AURA_NODE_URL
         )
+        # FIXME:
+        await self.substrate.init_props()
+        await self.babe_substrate.init_props()
+        await self.aura_substrate.init_props()
 
     async def test_get_valid_extrinsics(self):
 
@@ -229,7 +233,7 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_get_extrinsics_decoding_error(self):
 
         with self.assertRaises(RemainingScaleBytesNotEmptyException):
-            self.substrate.get_block(
+            await self.substrate.get_block(
                 block_hash="0x40b98c29466fa76eeee21008b50d5cb5d7220712ead554eb97a5fd6ba4bc31b5"
             )
 
@@ -264,39 +268,43 @@ class BlockTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_subscribe_block_headers(self):
 
-        def subscription_handler(obj, update_nr, subscription_id):
+        async def subscription_handler(obj, update_nr, subscription_id):
             return f"callback: {obj['header']['number']}"
 
-        result = self.substrate.subscribe_block_headers(subscription_handler)
+        result = await self.substrate.subscribe_block_headers(subscription_handler)
 
         self.assertEqual("callback: 103", result)
 
     async def test_check_requirements(self):
-        self.assertRaises(ValueError, self.substrate.get_block,
-                          block_hash='0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93',
-                          block_number=223
-                          )
-        self.assertRaises(ValueError, self.substrate.get_block,
-                          block_hash='0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93',
-                          finalized_only=True
-                          )
-        self.assertRaises(ValueError, self.substrate.get_block_header,
-                          block_hash='0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93',
-                          block_number=223
-                          )
-        self.assertRaises(ValueError, self.substrate.get_block_header,
-                          block_hash='0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93',
-                          finalized_only=True
-                          )
+        with self.assertRaises(ValueError):
+            await self.substrate.get_block(
+                block_hash='0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93',
+                block_number=223,
+            )
+        with self.assertRaises(ValueError):
+            await self.substrate.get_block(
+                block_hash='0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93',
+                finalized_only=True,
+            )
+        with self.assertRaises(ValueError):
+            await self.substrate.get_block_header(
+                block_hash='0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93',
+                block_number=223,
+            )
+        with self.assertRaises(ValueError):
+            await self.substrate.get_block_header(
+                block_hash='0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93',
+                finalized_only=True,
+            )
 
     async def test_block_author_babe(self):
-        block = self.babe_substrate.get_block(include_author=True)
+        block = await self.babe_substrate.get_block(include_author=True)
 
         self.assertIn('author', block)
         self.assertIsNotNone(block['author'])
 
     async def test_block_author_aura(self):
-        block = self.aura_substrate.get_block(include_author=True)
+        block = await self.aura_substrate.get_block(include_author=True)
 
         self.assertIn('author', block)
         self.assertIsNotNone(block['author'])

@@ -40,7 +40,7 @@ class RuntimeCallTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual('polkadot', result.value['spec_name'])
 
     async def test_core_version_at_not_best_block(self):
-        parent_hash = await self.substrate.get_block_header()['header']['parentHash']
+        parent_hash = (await self.substrate.get_block_header())['header']['parentHash']
         result = await self.substrate.runtime_call("Core", "version", block_hash = parent_hash)
 
         self.assertGreater(result.value['spec_version'], 0)

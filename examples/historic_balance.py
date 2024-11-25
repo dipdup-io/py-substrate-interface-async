@@ -25,9 +25,9 @@ async def main():
     substrate = SubstrateInterface(url="ws://127.0.0.1:9944")
 
     block_number = 10
-    block_hash = substrate.get_block_hash(block_number)
+    block_hash = await substrate.get_block_hash(block_number)
 
-    result = substrate.query(
+    result = await substrate.query(
         "System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"], block_hash=block_hash
     )
 

@@ -25,7 +25,7 @@ import json
 import logging
 
 from aiohttp import ClientSession
-from typing import Any, Callable, Optional, Union, List
+from typing import Any, Awaitable, Callable, Optional, Union, List
 
 from websocket import create_connection, WebSocketConnectionClosedException
 
@@ -230,6 +230,7 @@ class SubstrateInterface:
         """
         logger.debug(message)
 
+    # TODO: Check once on initialization
     async def supports_rpc_method(self, name: str) -> bool:
         """
         Check if substrate RPC supports given method
@@ -249,7 +250,12 @@ class SubstrateInterface:
 
         return name in self.config['rpc_methods']
 
-    async def rpc_request(self, method: str, params: Any, result_handler: Callable | None = None) -> Any:
+    async def rpc_request(
+            self,
+            method: str,
+            params: Any,
+            result_handler: Callable[..., Awaitable[None]] | None = None,
+        ) -> Any:
         """
         Method that handles the actual RPC request to the Substrate node. The other implemented functions eventually
         use this method to perform the request.
@@ -2569,8 +2575,13 @@ class SubstrateInterface:
             include_author=include_author
         )
 
-    async def subscribe_block_headers(self, subscription_handler: Callable, ignore_decoding_errors: bool = False,
-                                include_author: bool = False, finalized_only=False):
+    async def subscribe_block_headers(
+            self,
+            subscription_handler: Callable[..., Awaitable[None]],
+            ignore_decoding_errors: bool = False,
+            include_author: bool = False,
+            finalized_only=False,
+        ) -> None:
         """
         Subscribe to new block headers as soon as they are available. The callable `subscription_handler` will be
         executed when a new block is available and execution will block until `subscription_handler` will return
@@ -2579,7 +2590,7 @@ class SubstrateInterface:
         Example:
 
         ```
-        def subscription_handler(obj, update_nr, subscription_id):
+        async def subscription_handler(obj, update_nr, subscription_id):
 
             print(f"New block #{obj['header']['number']} produced by {obj['header']['author']}")
 
@@ -2587,7 +2598,7 @@ class SubstrateInterface:
               return {'message': 'Subscription will cancel when a value is returned', 'updates_processed': update_nr}
 
 
-        result = substrate.subscribe_block_headers(subscription_handler, include_author=True)
+        result = await substrate.subscribe_block_headers(subscription_handler, include_author=True)
         ```
 
         Parameters
@@ -2608,8 +2619,11 @@ class SubstrateInterface:
             block_hash = await self.get_chain_head()
 
         return await self.__get_block_handler(
-            block_hash, subscription_handler=subscription_handler, ignore_decoding_errors=ignore_decoding_errors,
-            include_author=include_author, finalized_only=finalized_only
+            block_hash=block_hash,
+            subscription_handler=subscription_handler,
+            ignore_decoding_errors=ignore_decoding_errors,
+            include_author=include_author,
+            finalized_only=finalized_only,
         )
 
     async def retrieve_extrinsic_by_identifier(self, extrinsic_identifier: str) -> "ExtrinsicReceipt":

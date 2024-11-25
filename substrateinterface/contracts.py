@@ -349,7 +349,7 @@ class ContractMetadata:
 
         raise ValueError(f'Message "{name}" not found')
 
-    def generate_message_data(self, name, args: dict | None = None) -> ScaleBytes:
+    async def generate_message_data(self, name, args: dict | None = None) -> ScaleBytes:
         """
         Compose the data field used in the "Contracts.call" call, finding the selector and encoded the args
         of provided message name
@@ -375,7 +375,7 @@ class ContractMetadata:
                         raise ValueError(f"Argument \"{arg['label']}\" is missing")
                     else:
 
-                        data += self.substrate.encode_scale(
+                        data += await self.substrate.encode_scale(
                             type_string=self.get_type_string_for_metadata_type(arg['type']['type']),
                             value=args[arg['label']]
                         )
@@ -676,7 +676,7 @@ class ContractCode:
 
         # Lookup constructor
         assert self.substrate
-        data = self.metadata.generate_constructor_data(name=constructor, args=args)
+        data = await self.metadata.generate_constructor_data(name=constructor, args=args)
 
         if gas_limit is None:
             gas_limit = {'ref_time': 25990000000, 'proof_size': 11990383647911208550}
@@ -810,7 +810,7 @@ class ContractInstance:
         GenericContractExecResult
         """
 
-        input_data = self.metadata.generate_message_data(name=method, args=args)
+        input_data = await self.metadata.generate_message_data(name=method, args=args)
         assert self.substrate
         # Execute runtime call in ContractsApi
         call_result = await self.substrate.runtime_call("ContractsApi", "call", {
@@ -866,7 +866,7 @@ class ContractInstance:
             gas_predit_result = await self.read(keypair, method, args, value)
             gas_limit = gas_predit_result.gas_required
 
-        input_data = self.metadata.generate_message_data(name=method, args=args)
+        input_data = await self.metadata.generate_message_data(name=method, args=args)
 
         call = self.substrate.compose_call(
             call_module='Contracts',

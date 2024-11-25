@@ -36,13 +36,13 @@ class ExtensionsTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_search_block_number(self):
         block_datetime = datetime(2020, 7, 12, 0, 0, 0, tzinfo=timezone.utc)
 
-        block_number = self.substrate.extensions.search_block_number(block_datetime=block_datetime)
+        block_number = await self.substrate.extensions.search_block_number(block_datetime=block_datetime)
 
         self.assertGreaterEqual(block_number, 665270)
         self.assertLessEqual(block_number, 665280)
 
     async def test_search_block_timestamp(self):
-        block_timestamp = self.substrate.extensions.get_block_timestamp(1000)
+        block_timestamp = await self.substrate.extensions.get_block_timestamp(1000)
         self.assertEqual(1590513426, block_timestamp)
 
     async def test_unsupported_extension_call(self):

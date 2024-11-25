@@ -62,10 +62,10 @@ result = substrate.subscribe_storage(
 ## Subscribe to new block headers
 
 ```python
-def subscription_handler(obj, update_nr, subscription_id):
+async def subscription_handler(obj, update_nr, subscription_id):
     print(f"New block #{obj['header']['number']}")
 
-    block = substrate.get_block(block_number=obj['header']['number'])
+    block = await substrate.get_block(block_number=obj['header']['number'])
 
     for idx, extrinsic in enumerate(block['extrinsics']):
         print(f'# {idx}:  {extrinsic.value}')

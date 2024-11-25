@@ -15,7 +15,7 @@
 # limitations under the License.
 import os
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from scalecodec import GenericExtrinsic
 from scalecodec.type_registry import load_type_registry_file
@@ -41,7 +41,7 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
         metadata_decoder = cls.substrate.runtime_config.create_scale_object('MetadataVersioned')
         metadata_decoder.decode(ScaleBytes(cls.metadata_fixture_dict[cls.test_metadata_version]))
 
-        cls.substrate.get_block_metadata = MagicMock(return_value=metadata_decoder)
+        cls.substrate.get_block_metadata = AsyncMock(return_value=metadata_decoder)
 
         def mocked_request(method, params):
             if method == 'state_getRuntimeVersion':
@@ -100,10 +100,10 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
         # cls.error_substrate.rpc_request = MagicMock(side_effect=mocked_request)
 
     async def test_decode_scale(self):
-        self.assertEqual(self.substrate.decode_scale('Compact<u32>', '0x08'), 2)
+        self.assertEqual(await self.substrate.decode_scale('Compact<u32>', '0x08'), 2)
 
     async def test_encode_scale(self):
-        self.assertEqual(self.substrate.encode_scale('Compact<u32>', 3), ScaleBytes('0x0c'))
+        self.assertEqual(await self.substrate.encode_scale('Compact<u32>', 3), ScaleBytes('0x0c'))
 
     async def test_create_scale_object(self):
         scale_obj = await self.substrate.create_scale_object("Bytes")
@@ -188,14 +188,14 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
         self.assertGreater(len(errors), 0)
 
     async def test_helper_functions_should_return_null_not_exists(self):
-        self.assertIsNone(self.empty_substrate.get_block_number(
+        self.assertIsNone(await self.empty_substrate.get_block_number(
             block_hash="0x6666666666666666666666666666666666666666666666666666666666666666"
         ))
 
-        self.assertIsNone(self.empty_substrate.get_block_hash(block_id=99999999999999999))
-        self.assertIsNone(self.empty_substrate.get_block_header(block_hash='0x'))
-        self.assertIsNone(self.empty_substrate.get_block_metadata(block_hash='0x')['result'])
-        self.assertIsNone(self.empty_substrate.get_block_runtime_version(block_hash='0x'))
+        self.assertIsNone(await self.empty_substrate.get_block_hash(block_id=99999999999999999))
+        self.assertIsNone(await self.empty_substrate.get_block_header(block_hash='0x'))
+        self.assertIsNone(await self.empty_substrate.get_block_metadata(block_hash='0x')['result'])
+        self.assertIsNone(await self.empty_substrate.get_block_runtime_version(block_hash='0x'))
 
     async def test_helper_functions_invalid_input(self):
         self.assertRaises(SubstrateRequestException, self.error_substrate.get_block_number, "0x6666666666666666")

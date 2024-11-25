@@ -91,18 +91,18 @@ class ContractMetadataTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_invalid_message_name(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_message_data("invalid_msg_name")
+            await self.contract_metadata.generate_message_data("invalid_msg_name")
 
         self.assertEqual('Message "invalid_msg_name" not found', str(cm.exception))
 
     async def test_generate_message_data(self):
 
-        scale_data = self.contract_metadata.generate_message_data("total_supply")
+        scale_data = await self.contract_metadata.generate_message_data("total_supply")
         self.assertEqual('0xdcb736b5', scale_data.to_hex())
 
     async def test_generate_message_data_with_args(self):
 
-        scale_data = self.contract_metadata.generate_message_data("transfer", args={
+        scale_data = await self.contract_metadata.generate_message_data("transfer", args={
             'to': '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
             'value': 10000
         })
@@ -113,7 +113,7 @@ class ContractMetadataTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_generate_message_data_missing_arg(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_message_data("transfer", args={
+            await self.contract_metadata.generate_message_data("transfer", args={
                 'value': 10000
             })
         self.assertEqual('Argument "to" is missing', str(cm.exception))
@@ -220,18 +220,18 @@ class ContractMetadataV1TestCase(ContractMetadataTestCase):
 
     async def test_invalid_message_name(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_message_data("invalid_msg_name")
+            await self.contract_metadata.generate_message_data("invalid_msg_name")
 
         self.assertEqual('Message "invalid_msg_name" not found', str(cm.exception))
 
     async def test_generate_message_data(self):
 
-        scale_data = self.contract_metadata.generate_message_data("total_supply")
+        scale_data = await self.contract_metadata.generate_message_data("total_supply")
         self.assertEqual('0xdb6375a8', scale_data.to_hex())
 
     async def test_generate_message_data_with_args(self):
 
-        scale_data = self.contract_metadata.generate_message_data("transfer", args={
+        scale_data = await self.contract_metadata.generate_message_data("transfer", args={
             'to': '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
             'value': 10000
         })
@@ -242,7 +242,7 @@ class ContractMetadataV1TestCase(ContractMetadataTestCase):
 
     async def test_generate_message_data_missing_arg(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_message_data("transfer", args={
+            await self.contract_metadata.generate_message_data("transfer", args={
                 'value': 10000
             })
         self.assertEqual('Argument "to" is missing', str(cm.exception))
@@ -331,7 +331,7 @@ class FlipperMetadataV3TestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_generate_message_data(self):
 
-        scale_data = self.contract_metadata.generate_message_data("get")
+        scale_data = await self.contract_metadata.generate_message_data("get")
         self.assertEqual('0x2f865bd9', scale_data.to_hex())
 
     async def test_invalid_constructor_name(self):
@@ -342,7 +342,7 @@ class FlipperMetadataV3TestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_invalid_message_name(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_message_data("invalid_msg_name")
+            await self.contract_metadata.generate_message_data("invalid_msg_name")
 
         self.assertEqual('Message "invalid_msg_name" not found', str(cm.exception))
 
@@ -354,7 +354,7 @@ class FlipperInstanceTestCase(unittest.IsolatedAsyncioTestCase):
 
         class MockedSubstrateInterface(SubstrateInterface):
 
-            def rpc_request(self, method, params, result_handler=None):
+            async def rpc_request(self, method, params, result_handler=None):
                 if method == 'state_call':
                     return {
                         'jsonrpc': '2.0',
@@ -373,7 +373,7 @@ class FlipperInstanceTestCase(unittest.IsolatedAsyncioTestCase):
                         },
                         'id': self.request_id}
 
-                return super().rpc_request(method, params, result_handler)
+                return await super().rpc_request(method, params, result_handler)
 
         cls.substrate = MockedSubstrateInterface(url=settings.KUSAMA_NODE_URL, type_registry_preset='canvas')
         # cls.substrate = SubstrateInterface(url='ws://127.0.0.1:9944')
@@ -389,13 +389,13 @@ class FlipperInstanceTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_instance_read(self):
 
-        result = self.contract.read(self.keypair, 'get')
+        result = await self.contract.read(self.keypair, 'get')
 
         self.assertEqual(False, result.contract_result_data.value)
 
     async def test_instance_read_at_not_best_block(self):
-        parent_hash = await self.substrate.get_block_header()['header']['parentHash']
-        result = self.contract.read(self.keypair, 'get', block_hash = parent_hash)
+        parent_hash = (await self.substrate.get_block_header())['header']['parentHash']
+        result = await self.contract.read(self.keypair, 'get', block_hash = parent_hash)
 
         self.assertEqual(False, result.contract_result_data.value)
 
@@ -452,13 +452,13 @@ class FlipperInstanceV5TestCase(FlipperInstanceTestCase):
 
     async def test_instance_read(self):
 
-        result = self.contract.read(self.keypair, 'get')
+        result = await self.contract.read(self.keypair, 'get')
 
         self.assertEqual({'Ok': False}, result.contract_result_data.value)
 
     async def test_instance_read_at_not_best_block(self):
         parent_hash = (await self.substrate.get_block_header())['header']['parentHash']
-        result = self.contract.read(self.keypair, 'get', block_hash=parent_hash)
+        result = await self.contract.read(self.keypair, 'get', block_hash=parent_hash)
 
         self.assertEqual({'Ok': False}, result.contract_result_data.value)
 
