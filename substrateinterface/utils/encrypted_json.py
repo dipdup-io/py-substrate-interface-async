@@ -8,9 +8,9 @@ from substrateinterface.utils import CryptoExtraFallback
 try:
     import nacl.hashlib
     import nacl.secret
-    import sr25519
+    import sr25519  # type: ignore[import-untyped]
 except ImportError:
-    nacl = CryptoExtraFallback()
+    nacl = CryptoExtraFallback()  # type: ignore[assignment]
     sr25519 = CryptoExtraFallback()
 
 NONCE_LENGTH = 24
@@ -44,12 +44,12 @@ def decode_pair_from_encrypted_json(json_data: Union[str, dict], passphrase: str
         json_data = json.loads(json_data)
 
     # Check requirements
-    if json_data.get('encoding', {}).get('version') != "3":
+    if json_data.get('encoding', {}).get('version') != "3":  # type: ignore[union-attr]
         raise ValueError("Unsupported JSON format")
 
-    encrypted = base64.b64decode(json_data['encoded'])
+    encrypted = base64.b64decode(json_data['encoded'])  # type: ignore[index]
 
-    if 'scrypt' in json_data['encoding']['type']:
+    if 'scrypt' in json_data['encoding']['type']:  # type: ignore[index]
         salt = encrypted[0:32]
         n = int.from_bytes(encrypted[32:36], byteorder='little')
         p = int.from_bytes(encrypted[36:40], byteorder='little')
@@ -61,7 +61,7 @@ def decode_pair_from_encrypted_json(json_data: Union[str, dict], passphrase: str
     else:
         password = passphrase.encode().rjust(32, b'\x00')
 
-    if "xsalsa20-poly1305" not in json_data['encoding']['type']:
+    if "xsalsa20-poly1305" not in json_data['encoding']['type']:  # type: ignore[index]
         raise ValueError("Unsupported encoding type")
 
     nonce = encrypted[0:NONCE_LENGTH]
@@ -73,7 +73,7 @@ def decode_pair_from_encrypted_json(json_data: Union[str, dict], passphrase: str
     # Decode PKCS8 message
     secret_key, public_key = decode_pkcs8(decrypted)
 
-    if 'sr25519' in json_data['encoding']['content']:
+    if 'sr25519' in json_data['encoding']['content']:  # type: ignore[index]
         # Secret key from PolkadotJS is an Ed25519 expanded secret key, so has to be converted
         # https://github.com/polkadot-js/wasm/blob/master/packages/wasm-crypto/src/rs/sr25519.rs#L125
         converted_public_key, secret_key = sr25519.pair_from_ed25519_secret_key(secret_key)

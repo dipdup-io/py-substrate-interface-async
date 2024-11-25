@@ -25,7 +25,7 @@ def subscription_handler(account_info_obj, update_nr, subscription_id):
         return account_info_obj
 
 
-result = substrate.query("System", "Account", ["5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"],
+result = await substrate.query("System", "Account", ["5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"],
                          subscription_handler=subscription_handler)
 
 print(result)

@@ -16,7 +16,7 @@
 import os
 import unittest
 
-from scalecodec.type_registry import load_type_registry_file
+from scalecodec.type_registry import load_type_registry_file  # type: ignore[import-untyped]
 from substrateinterface import SubstrateInterface, Keypair, ExtrinsicReceipt
 from substrateinterface.exceptions import SubstrateRequestException
 from test import settings
@@ -50,7 +50,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_create_extrinsic_metadata_v14(self):
 
         # Create balance transfer call
-        call = self.kusama_substrate.compose_call(
+        call = await self.kusama_substrate.compose_call(
             call_module='Balances',
             call_function='transfer_keep_alive',
             call_params={
@@ -59,7 +59,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             }
         )
 
-        extrinsic = self.kusama_substrate.create_signed_extrinsic(call=call, keypair=self.keypair, tip=1)
+        extrinsic = await self.kusama_substrate.create_signed_extrinsic(call=call, keypair=self.keypair, tip=1)
 
         decoded_extrinsic = self.kusama_substrate.create_scale_object("Extrinsic")
         decoded_extrinsic.decode(extrinsic.data)
@@ -86,7 +86,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic = await substrate.create_signed_extrinsic(call=call, keypair=self.keypair, era={'period': 64})
 
             try:
-                substrate.submit_extrinsic(extrinsic)
+                await substrate.submit_extrinsic(extrinsic)
 
                 self.fail('Should raise no funds to pay fees exception')
 
@@ -96,7 +96,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_create_batch_extrinsic(self):
 
-        balance_call = self.polkadot_substrate.compose_call(
+        balance_call = await self.polkadot_substrate.compose_call(
             call_module='Balances',
             call_function='transfer_keep_alive',
             call_params={
@@ -105,7 +105,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             }
         )
 
-        call = self.polkadot_substrate.compose_call(
+        call = await self.polkadot_substrate.compose_call(
             call_module='Utility',
             call_function='batch',
             call_params={
@@ -113,7 +113,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             }
         )
 
-        extrinsic = self.polkadot_substrate.create_signed_extrinsic(call=call, keypair=self.keypair, era={'period': 64})
+        extrinsic = await self.polkadot_substrate.create_signed_extrinsic(call=call, keypair=self.keypair, era={'period': 64})
 
         # Decode extrinsic again as test
         extrinsic.decode(extrinsic.data)
@@ -123,7 +123,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_create_multisig_extrinsic(self):
 
-        call = self.kusama_substrate.compose_call(
+        call = await self.kusama_substrate.compose_call(
             call_module='Balances',
             call_function='transfer_keep_alive',
             call_params={
@@ -155,7 +155,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_create_unsigned_extrinsic(self):
 
-        call = self.kusama_substrate.compose_call(
+        call = await self.kusama_substrate.compose_call(
             call_module='Timestamp',
             call_function='set',
             call_params={
@@ -169,7 +169,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_payment_info(self):
         keypair = Keypair(ss58_address="EaG2CRhJWPb7qmdcJvy3LiWdh26Jreu9Dx6R1rXxPmYXoDk")
 
-        call = self.kusama_substrate.compose_call(
+        call = await self.kusama_substrate.compose_call(
             call_module='Balances',
             call_function='transfer_keep_alive',
             call_params={
@@ -177,7 +177,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
                 'value': 2000
             }
         )
-        payment_info = self.kusama_substrate.get_payment_info(call=call, keypair=keypair)
+        payment_info = await self.kusama_substrate.get_payment_info(call=call, keypair=keypair)
 
         self.assertIn('class', payment_info)
         self.assertIn('partialFee', payment_info)
@@ -187,7 +187,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_generate_signature_payload_lte_256_bytes(self):
 
-        call = self.kusama_substrate.compose_call(
+        call = await self.kusama_substrate.compose_call(
             call_module='System',
             call_function='remark',
             call_params={
@@ -195,13 +195,13 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             }
         )
 
-        signature_payload = self.kusama_substrate.generate_signature_payload(call=call)
+        signature_payload = await self.kusama_substrate.generate_signature_payload(call=call)
 
         self.assertEqual(signature_payload.length, 256)
 
     async def test_generate_signature_payload_gt_256_bytes(self):
 
-        call = self.kusama_substrate.compose_call(
+        call = await self.kusama_substrate.compose_call(
             call_module='System',
             call_function='remark',
             call_params={
@@ -215,7 +215,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_create_extrinsic_bytes_signature(self):
         # Create balance transfer call
-        call = self.kusama_substrate.compose_call(
+        call = await self.kusama_substrate.compose_call(
             call_module='Balances',
             call_function='transfer_keep_alive',
             call_params={
@@ -227,13 +227,13 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
         signature_hex = '01741d037f6ea0c5269c6d78cde9505178ee928bb1077db49c684f9d1cad430e767e09808bc556ea2962a7b21a' \
                         'ada78b3aaf63a8b41e035acfdb0f650634863f83'
 
-        extrinsic = self.kusama_substrate.create_signed_extrinsic(
+        extrinsic = await self.kusama_substrate.create_signed_extrinsic(
             call=call, keypair=self.keypair, signature=f'0x{signature_hex}'
         )
 
         self.assertEqual(extrinsic.value['signature']['Sr25519'], f'0x{signature_hex[2:]}')
 
-        extrinsic = self.kusama_substrate.create_signed_extrinsic(
+        extrinsic = await self.kusama_substrate.create_signed_extrinsic(
             call=call, keypair=self.keypair, signature=bytes.fromhex(signature_hex)
         )
 

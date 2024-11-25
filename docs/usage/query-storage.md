@@ -9,7 +9,7 @@ See the [metadata documentation](https://polkascan.github.io/py-substrate-metada
 ## Example
 
 ```python
-result = substrate.query('System', 'Account', ['F4xQKRUagnSGjFqafyhajLs94e7Vvzvr8ebwYJceKpr8R7T'])
+result = await substrate.query('System', 'Account', ['F4xQKRUagnSGjFqafyhajLs94e7Vvzvr8ebwYJceKpr8R7T'])
 
 print(result.value['nonce']) #  7695
 print(result.value['data']['free']) # 635278638077956496
@@ -18,7 +18,7 @@ print(result.value['data']['free']) # 635278638077956496
 ## State at a specific block hash
 
 ```python
-account_info = substrate.query(
+account_info = await substrate.query(
     module='System',
     storage_function='Account',
     params=['F4xQKRUagnSGjFqafyhajLs94e7Vvzvr8ebwYJceKpr8R7T'],
@@ -67,7 +67,7 @@ storage_keys = [
     )
 ]
 
-result = substrate.query_multi(storage_keys)
+result = await substrate.query_multi(storage_keys)
 
 for storage_key, value_obj in result:
     print(storage_key, value_obj)
@@ -81,7 +81,7 @@ The result is a `QueryMapResult` object, which is an iterator:
 
 ```python
 # Retrieve the first 199 System.Account entries
-result = substrate.query_map('System', 'Account', max_results=199)
+result = await substrate.query_map('System', 'Account', max_results=199)
 
 for account, account_info in result:
     print(f"Free balance of account '{account.value}': {account_info.value['data']['free']}")
@@ -92,7 +92,7 @@ maximum `page_size` restricted by the RPC node is 1000
 
 ```python
 # Retrieve all System.Account entries in batches of 200 (automatically appended by `QueryMapResult` iterator)
-result = substrate.query_map('System', 'Account', page_size=200, max_results=400)
+result = await substrate.query_map('System', 'Account', page_size=200, max_results=400)
 
 for account, account_info in result:
     print(f"Free balance of account '{account.value}': {account_info.value['data']['free']}")
@@ -101,7 +101,7 @@ for account, account_info in result:
 Querying a `DoubleMap` storage function:
 
 ```python
-era_stakers = substrate.query_map(
+era_stakers = await substrate.query_map(
     module='Staking',
     storage_function='ErasStakers',
     params=[2100]

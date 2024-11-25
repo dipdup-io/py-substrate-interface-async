@@ -17,7 +17,7 @@
 import json
 import os
 from hashlib import blake2b
-from typing import Optional
+from typing import Any, Optional
 
 from .utils import version_tuple
 
@@ -45,7 +45,7 @@ class ContractMetadata:
         self.metadata_version = None
         self.metadata_dict = metadata_dict
         self.substrate = substrate
-        self.type_registry = {}
+        self.type_registry = {}  # type: ignore[var-annotated]
 
         self.__type_offset = 0
 
@@ -225,7 +225,7 @@ class ContractMetadata:
         -------
         str
         """
-
+        assert self.metadata_version
         if self.metadata_version >= 1:
 
             if type_id > len(self.metadata_dict['types']):
@@ -404,6 +404,7 @@ class ContractMetadata:
         for event_id, event in enumerate(self.metadata_dict['spec']['events']):
             if topic == event['signature_topic']:
                 return event_id
+        return None
 
         # raise ValueError(f'Contract event for topic "{topic}" not found')
 
@@ -420,7 +421,7 @@ class ContractEvent(ScaleType):
         self.event_id = None
         self.name = None
         self.docs = None
-        self.args = []
+        self.args: list[Any] = []
         super().__init__(*args, **kwargs)
 
     def process(self):
@@ -673,10 +674,13 @@ class ContractCode:
         -------
         ContractInstance
         """
+        # FIXME: mypy
+        assert self.substrate
+        assert self.substrate.metadata
+        assert self.code_hash
 
         # Lookup constructor
-        assert self.substrate
-        data = await self.metadata.generate_constructor_data(name=constructor, args=args)
+        data = await self.metadata.generate_constructor_data(name=constructor, args=args)  # type: ignore[union-attr]
 
         if gas_limit is None:
             gas_limit = {'ref_time': 25990000000, 'proof_size': 11990383647911208550}
@@ -785,7 +789,7 @@ class ContractInstance:
         ContractInstance
         """
 
-        metadata = ContractMetadata.create_from_file(metadata_file, substrate=substrate)
+        metadata = ContractMetadata.create_from_file(metadata_file, substrate=substrate)  # type: ignore[arg-type]
 
         return cls(contract_address=contract_address, metadata=metadata, substrate=substrate)
 
@@ -810,7 +814,7 @@ class ContractInstance:
         GenericContractExecResult
         """
 
-        input_data = await self.metadata.generate_message_data(name=method, args=args)
+        input_data = await self.metadata.generate_message_data(name=method, args=args)  # type: ignore[union-attr]
         assert self.substrate
         # Execute runtime call in ContractsApi
         call_result = await self.substrate.runtime_call("ContractsApi", "call", {
@@ -827,7 +831,7 @@ class ContractInstance:
         if 'Ok' in call_result['result']:
 
             try:
-                return_type_string = self.metadata.get_return_type_string_for_message(method)
+                return_type_string = self.metadata.get_return_type_string_for_message(method)  # type: ignore[union-attr]
                 result_scale_obj = await self.substrate.create_scale_object(return_type_string)
                 result_scale_obj.decode(ScaleBytes(call_result['result'][1]['data'].value_object))
                 call_result.value_object['result'].value_object[1].value_object['data'] = result_scale_obj
@@ -866,9 +870,9 @@ class ContractInstance:
             gas_predit_result = await self.read(keypair, method, args, value)
             gas_limit = gas_predit_result.gas_required
 
-        input_data = await self.metadata.generate_message_data(name=method, args=args)
+        input_data = await self.metadata.generate_message_data(name=method, args=args)  # type: ignore[union-attr]
 
-        call = self.substrate.compose_call(
+        call = await self.substrate.compose_call(
             call_module='Contracts',
             call_function='call',
             call_params={
@@ -886,4 +890,4 @@ class ContractInstance:
             extrinsic, wait_for_inclusion=wait_for_inclusion, wait_for_finalization=wait_for_finalization
         )
 
-        return ContractExecutionReceipt.create_from_extrinsic_receipt(receipt, self.metadata, self.contract_address)
+        return ContractExecutionReceipt.create_from_extrinsic_receipt(receipt, self.metadata, self.contract_address)  # type: ignore[arg-type]

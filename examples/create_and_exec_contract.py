@@ -30,7 +30,7 @@ async def main():
     contract_address = "5DYXHYiH5jPj8orDw5HSFJhmATe8NtmbguG3vs53v8RgSHTW"
 
     # Check if contract is on chain
-    contract_info = substrate.query("Contracts", "ContractInfoOf", [contract_address])
+    contract_info = await substrate.query("Contracts", "ContractInfoOf", [contract_address])
 
     if contract_info.value:
 

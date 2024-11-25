@@ -23,6 +23,8 @@ from substrateinterface import Keypair
 
 
 class SS58TestCase(unittest.IsolatedAsyncioTestCase):
+    alice_keypair: Keypair
+    subkey_pairs: list
 
     @classmethod
     def setUpClass(cls) -> None:

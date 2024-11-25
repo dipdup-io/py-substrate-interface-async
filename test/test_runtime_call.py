@@ -47,7 +47,7 @@ class RuntimeCallTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual('polkadot', result.value['spec_name'])
 
     async def test_transaction_payment(self):
-        call = self.substrate.compose_call(
+        call = await self.substrate.compose_call(
             call_module='Balances',
             call_function='transfer_keep_alive',
             call_params={

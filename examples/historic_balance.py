@@ -33,7 +33,7 @@ async def main():
 
 
     def format_balance(amount: int):
-        amount = format(amount / 10**substrate.properties.get('tokenDecimals', 0), ".15g")
+        amount = format(amount / 10**substrate.properties.get('tokenDecimals', 0), ".15g")  # type: ignore[assignment]
         return f"{amount} {substrate.properties.get('tokenSymbol', 'UNIT')}"
 
 

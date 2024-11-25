@@ -336,7 +336,7 @@ class SubstrateInterface:
                     self.debug_message(f"Websocket result [{subscription_id} #{update_nr}]: {message}")
 
                     # Call result_handler with message for processing
-                    callback_result = result_handler(message, update_nr, subscription_id)
+                    callback_result = await result_handler(message, update_nr, subscription_id)  # type: ignore[misc]
                     if callback_result is not None:
                         json_body = callback_result
 
@@ -365,7 +365,7 @@ class SubstrateInterface:
         # Check if response has error
         if 'error' in json_body:
             raise SubstrateRequestException(json_body['error'])
-        
+
         return json_body
 
     async def init_props(self):
@@ -478,6 +478,8 @@ class SubstrateInterface:
 
             return response.get('result')
 
+        return None
+
     async def get_chain_finalised_head(self) -> str:
         """
         A pass-though to existing JSONRPC method `chain_getFinalizedHead`
@@ -493,6 +495,8 @@ class SubstrateInterface:
                 raise SubstrateRequestException(response['error']['message'])
 
             return response.get('result')
+
+        return None
 
     async def get_block_hash(self, block_id: int | None = None) -> str:
         """
@@ -513,7 +517,9 @@ class SubstrateInterface:
         else:
             return response.get('result')
 
-    async def get_block_number(self, block_hash: str) -> int:
+        return None
+
+    async def get_block_number(self, block_hash: str) -> int:  # type: ignore[return]
         """
         A convenience method to get the block number for given block_hash
 
@@ -632,7 +638,7 @@ class SubstrateInterface:
         warnings.warn("Use StorageKey.generate() instead", DeprecationWarning)
 
         storage_key = StorageKey.create_from_storage_function(
-            storage_module, storage_function, params, runtime_config=self.runtime_config, metadata=self.metadata
+            storage_module, storage_function, params, runtime_config=self.runtime_config, metadata=self.metadata  # type: ignore[arg-type]
         )
 
         return '0x{}'.format(storage_key.data.hex())
@@ -773,7 +779,7 @@ class SubstrateInterface:
         Example:
 
         ```
-        result = substrate.query_map('System', 'Account', max_results=100)
+        result = await substrate.query_map('System', 'Account', max_results=100)
 
         for account, account_info in result:
             print(f"Free balance of account '{account.value}': {account_info.value['data']['free']}")
@@ -804,7 +810,7 @@ class SubstrateInterface:
 
         await self.init_runtime(block_hash=block_hash)
 
-        metadata_pallet = self.metadata.get_metadata_pallet(module)
+        metadata_pallet = await self.metadata.get_metadata_pallet(module)
 
         if not metadata_pallet:
             raise StorageFunctionNotFound(f'Pallet "{module}" not found')
@@ -899,7 +905,7 @@ class SubstrateInterface:
                         item_key = None
 
                     try:
-                        item_value = self.decode_scale(
+                        item_value = await self.decode_scale(
                             type_string=value_type,
                             scale_bytes=item[1],
                             return_scale_obj=True,
@@ -934,7 +940,7 @@ class SubstrateInterface:
             )
         ]
 
-        result = substrate.query_multi(storage_keys)
+        result = await substrate.query_multi(storage_keys)
         ```
 
         Parameters
@@ -1147,7 +1153,7 @@ class SubstrateInterface:
         await self.init_runtime()
 
         return StorageKey.create_from_storage_function(
-            pallet, storage_function, params, runtime_config=self.runtime_config, metadata=self.metadata
+            pallet, storage_function, params, runtime_config=self.runtime_config, metadata=self.metadata  # type: ignore[arg-type]
         )
 
     async def subscribe_storage(self, storage_keys: List[StorageKey], subscription_handler: Callable):
@@ -1624,7 +1630,7 @@ class SubstrateInterface:
 
         # Process era
         if era is None:
-            era = '00'
+            era = '00'  # type: ignore[assignment]
         else:
             if isinstance(era, dict) and 'current' not in era and 'phase' not in era:
                 # Retrieve current block id
@@ -1658,8 +1664,8 @@ class SubstrateInterface:
         extrinsic = self.runtime_config.create_scale_object(type_string='Extrinsic', metadata=self.metadata)
 
         value = {
-            'account_id': f'0x{keypair.public_key.hex()}',
-            'signature': f'0x{signature.hex()}',
+            'account_id': f'0x{keypair.public_key.hex()}',  # type: ignore[union-attr]
+            'signature': f'0x{signature.hex()}',  # type: ignore[union-attr]
             'call_function': call.value['call_function'],
             'call_module': call.value['call_module'],
             'call_args': call.value['call_args'],
@@ -1762,7 +1768,7 @@ class SubstrateInterface:
         # Compose 'as_multi' when final, 'approve_as_multi' otherwise
         if multisig_details.value and len(multisig_details.value['approvals']) + 1 == multisig_account.threshold:
             multi_sig_call = await self.compose_call("Multisig", "as_multi", {
-                'other_signatories': [s for s in multisig_account.signatories if s != f'0x{keypair.public_key.hex()}'],
+                'other_signatories': [s for s in multisig_account.signatories if s != f'0x{keypair.public_key.hex()}'],  # type: ignore[union-attr]
                 'threshold': multisig_account.threshold,
                 'maybe_timepoint': maybe_timepoint,
                 'call': call,
@@ -1771,14 +1777,14 @@ class SubstrateInterface:
             })
         else:
             multi_sig_call = await self.compose_call("Multisig", "approve_as_multi", {
-                'other_signatories': [s for s in multisig_account.signatories if s != f'0x{keypair.public_key.hex()}'],
+                'other_signatories': [s for s in multisig_account.signatories if s != f'0x{keypair.public_key.hex()}'],  # type: ignore[union-attr]
                 'threshold': multisig_account.threshold,
                 'maybe_timepoint': maybe_timepoint,
                 'call_hash': call.call_hash,
                 'max_weight': max_weight
             })
 
-        return self.create_signed_extrinsic(
+        return await self.create_signed_extrinsic(
             multi_sig_call, keypair, era=era, nonce=nonce, tip=tip, tip_asset_id=tip_asset_id, signature=signature
         )
 
@@ -2170,7 +2176,9 @@ class SubstrateInterface:
                     if constant_name == constant.value['name']:
                         return constant
 
-    async def get_constant(self, module_name, constant_name, block_hash=None) -> Optional[ScaleType]:
+        return None
+
+    async def get_constant(self, module_name, constant_name, block_hash=None) -> Optional[ScaleType]:  # type: ignore[return]
         """
         Returns the decoded `ScaleType` object of the constant for given module name, call function name and block_hash
         (or chaintip if block_hash is omitted)
@@ -2661,7 +2669,7 @@ class SubstrateInterface:
             extrinsic_hash=extrinsic_hash
         )
 
-    async def get_extrinsics(self, block_hash: str | None = None, block_number: int | None = None) -> list:
+    async def get_extrinsics(self, block_hash: str | None = None, block_number: int | None = None) -> list:  # type: ignore[return]
         """
         Return extrinsics for given block_hash or block_number
 
@@ -3156,13 +3164,13 @@ class ExtrinsicReceipt:
 
         block = await self.substrate.get_block(block_hash=self.block_hash)
 
-        extrinsics = block['extrinsics']
+        extrinsics = block['extrinsics']  # type: ignore[index]
 
         if len(extrinsics) > 0:
             if self.__extrinsic_idx is None:
                 self.__extrinsic_idx = self.__get_extrinsic_index(
                     block_extrinsics=extrinsics,
-                    extrinsic_hash=self.extrinsic_hash
+                    extrinsic_hash=self.extrinsic_hash  # type: ignore[arg-type]
                 )
 
             if self.__extrinsic_idx >= len(extrinsics):
@@ -3214,13 +3222,13 @@ class ExtrinsicReceipt:
             if self.extrinsic_idx is None:
                 await self.retrieve_extrinsic()
 
-            self.__triggered_events = []
+            self.__triggered_events = []  # type: ignore[assignment]
 
             for event in (await self.substrate.get_events(block_hash=self.block_hash)):
                 if event.extrinsic_idx == self.extrinsic_idx:
-                    self.__triggered_events.append(event)
+                    self.__triggered_events.append(event)  # type: ignore[attr-defined]
 
-        return self.__triggered_events
+        return self.__triggered_events  # type: ignore[return-value]
 
     async def process_events(self):
         if await self.triggered_events():
@@ -3486,7 +3494,7 @@ class QueryMapResult:
         if not self.substrate:
             return []
 
-        result = await self.substrate.query_map(module=self.module, storage_function=self.storage_function,
+        result = await self.substrate.query_map(module=self.module, storage_function=self.storage_function,  # type: ignore[arg-type]
                                           params=self.params, page_size=self.page_size, block_hash=self.block_hash,
                                           start_key=start_key, max_results=self.max_results,
                                           ignore_decoding_errors=self.ignore_decoding_errors)

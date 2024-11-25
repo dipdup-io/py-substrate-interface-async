@@ -39,7 +39,7 @@ class StorageKey:
         self.pallet = pallet
         self.storage_function = storage_function
         self.params = params
-        self.params_encoded = []
+        self.params_encoded = []  # type: ignore[var-annotated]
         self.data = data
         self.metadata = metadata
         self.runtime_config = runtime_config
@@ -81,9 +81,9 @@ class StorageKey:
             value_scale_type = storage_item.get_value_type_string()
 
         return cls(
-            pallet=None, storage_function=None, params=None,
+            pallet=None, storage_function=None, params=None,  # type: ignore[arg-type]
             data=data, metadata=metadata,
-            value_scale_type=value_scale_type, runtime_config=runtime_config
+            value_scale_type=value_scale_type, runtime_config=runtime_config  # type: ignore[arg-type]
         )
 
     @classmethod
@@ -107,7 +107,7 @@ class StorageKey:
         """
         storage_key_obj = cls(
             pallet=pallet, storage_function=storage_function, params=params,
-            data=None, runtime_config=runtime_config, metadata=metadata, value_scale_type=None
+            data=None, runtime_config=runtime_config, metadata=metadata, value_scale_type=None  # type: ignore[arg-type]
         )
 
         storage_key_obj.generate()
@@ -125,7 +125,7 @@ class StorageKey:
 
         return value
 
-    def to_hex(self) -> str:
+    def to_hex(self) -> str:  # type: ignore[return]
         """
         Returns a Hex-string representation of current StorageKey data
 
@@ -239,14 +239,14 @@ class StorageKey:
         if data is not None:
             change_scale_type = self.value_scale_type
             result_found = True
-        elif self.metadata_storage_function.value['modifier'] == 'Default':
+        elif self.metadata_storage_function.value['modifier'] == 'Default':  # type: ignore[attr-defined]
             # Fallback to default value of storage function if no result
             change_scale_type = self.value_scale_type
-            data = ScaleBytes(self.metadata_storage_function.value_object['default'].value_object)
+            data = ScaleBytes(self.metadata_storage_function.value_object['default'].value_object)  # type: ignore[attr-defined]
         else:
             # No result is interpreted as an Option<...> result
             change_scale_type = f'Option<{self.value_scale_type}>'
-            data = ScaleBytes(self.metadata_storage_function.value_object['default'].value_object)
+            data = ScaleBytes(self.metadata_storage_function.value_object['default'].value_object)  # type: ignore[attr-defined]
 
         # Decode SCALE result data
         updated_obj = self.runtime_config.create_scale_object(

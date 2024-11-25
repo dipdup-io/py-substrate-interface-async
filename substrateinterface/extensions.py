@@ -43,7 +43,7 @@ class Extension:
         -------
 
         """
-        self.substrate: 'SubstrateInterface' = substrate
+        self.substrate: 'SubstrateInterface' = substrate  # type: ignore[no-redef]
 
     def close(self):
         """
@@ -140,7 +140,7 @@ class SubstrateNodeExtension(SearchExtension):
     Implementation of `SearchExtension` using only Substrate RPC methods. Could be significant inefficient.
     """
 
-    async def filter_extrinsics(self, block_start: int | None = None, block_end: int | None = None, ss58_address: str | None = None,
+    async def filter_extrinsics(self, block_start: int | None = None, block_end: int | None = None, ss58_address: str | None = None,  # type: ignore[override]
                           pallet_name: str | None = None, call_name: str | None = None) -> list:
 
         if block_end is None:
@@ -173,7 +173,7 @@ class SubstrateNodeExtension(SearchExtension):
 
         self.max_block_range: int = max_block_range
 
-    async def filter_events(self, block_start: int | None = None, block_end: int | None = None, pallet_name: str | None = None,
+    async def filter_events(self, block_start: int | None = None, block_end: int | None = None, pallet_name: str | None = None,  # type: ignore[override]
                       event_name: str | None = None, account_id: str | None = None) -> list:
 
         if block_end is None:

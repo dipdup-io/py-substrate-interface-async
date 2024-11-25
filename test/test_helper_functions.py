@@ -17,10 +17,10 @@ import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock
 
-from scalecodec import GenericExtrinsic
-from scalecodec.type_registry import load_type_registry_file
+from scalecodec import GenericExtrinsic  # type: ignore[import-untyped]
+from scalecodec.type_registry import load_type_registry_file  # type: ignore[import-untyped]
 from substrateinterface.exceptions import SubstrateRequestException
-from scalecodec.base import ScaleBytes
+from scalecodec.base import ScaleBytes  # type: ignore[import-untyped]
 from substrateinterface import SubstrateInterface, Keypair
 from test.settings import POLKADOT_NODE_URL
 
@@ -282,11 +282,12 @@ class TestHelperFunctionsKarura(TestHelperFunctionsV14):
 
 
 class TestRPCHelperFunctions(unittest.IsolatedAsyncioTestCase):
+    substrate: SubstrateInterface
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.substrate = SubstrateInterface(url=POLKADOT_NODE_URL)
-        cls.substrate.orig_rpc_request = cls.substrate.rpc_request
+        orig_rpc_request = cls.substrate.rpc_request
 
         async def mocked_request(method, params):
             if method == 'author_pendingExtrinsics':
@@ -297,9 +298,9 @@ class TestRPCHelperFunctions(unittest.IsolatedAsyncioTestCase):
                     'id': 17
                 }
 
-            return await cls.substrate.orig_rpc_request(method, params)
+            return await orig_rpc_request(method, params)
 
-        cls.substrate.rpc_request = MagicMock(side_effect=mocked_request)
+        cls.substrate.rpc_request = MagicMock(side_effect=mocked_request)   # type: ignore[method-assign]
 
     async def test_pending_extrinsics(self):
         pending_extrinsics = await self.substrate.retrieve_pending_extrinsics()
@@ -309,6 +310,8 @@ class TestRPCHelperFunctions(unittest.IsolatedAsyncioTestCase):
 
 
 class SS58HelperTestCase(unittest.IsolatedAsyncioTestCase):
+    keypair: Keypair
+    substrate: SubstrateInterface
 
     @classmethod
     def setUpClass(cls) -> None:

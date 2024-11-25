@@ -19,7 +19,7 @@ import unittest
 from substrateinterface.constants import DEV_PHRASE
 from substrateinterface.key import extract_derive_path
 from substrateinterface.exceptions import ConfigurationError
-from scalecodec.base import ScaleBytes
+from scalecodec.base import ScaleBytes  # type: ignore[import-untyped]
 from substrateinterface import Keypair, KeypairType, MnemonicLanguageCode
 
 

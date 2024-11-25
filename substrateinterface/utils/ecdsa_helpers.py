@@ -26,8 +26,8 @@ try:
     from eth_utils import to_checksum_address, keccak as eth_utils_keccak
 except ImportError:
     SECP256k1 = CryptoExtraFallback()
-    Signature = CryptoExtraFallback()
-    PrivateKey = CryptoExtraFallback()
+    Signature = CryptoExtraFallback()  # type: ignore[assignment,misc]
+    PrivateKey = CryptoExtraFallback()  # type: ignore[assignment,misc]
     to_checksum_address = CryptoExtraFallback()
     eth_utils_keccak = CryptoExtraFallback()
 

@@ -95,7 +95,7 @@ substrate = SubstrateInterface(
     url="ws://127.0.0.1:9944"
 )
 
-result = substrate.query_map("System", "Account", max_results=100)
+result = await substrate.query_map("System", "Account", max_results=100)
 
 for account, account_info in result:
     print(f'* {account.value}: {account_info.value}')
@@ -167,7 +167,7 @@ keypair = Keypair.create_from_uri('//Alice')
 contract_address = "5GhwarrVMH8kjb8XyW6zCfURHbHy3v84afzLbADyYYX6H2Kk"
 
 # Check if contract is on chain
-contract_info = substrate.query("Contracts", "ContractInfoOf", [contract_address])
+contract_info = await substrate.query("Contracts", "ContractInfoOf", [contract_address])
 
 if contract_info.value:
 
@@ -238,7 +238,7 @@ substrate = SubstrateInterface(url="ws://127.0.0.1:9944")
 block_number = 10
 block_hash = await substrate.get_block_hash(block_number)
 
-result = substrate.query(
+result = await substrate.query(
     "System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"], block_hash=block_hash
 )
 
@@ -301,7 +301,7 @@ def subscription_handler(account_info_obj, update_nr, subscription_id):
         return account_info_obj
 
 
-result = substrate.query("System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"],
+result = await substrate.query("System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"],
                          subscription_handler=subscription_handler)
 
 print(result)

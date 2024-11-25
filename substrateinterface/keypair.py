@@ -18,7 +18,7 @@ import json
 
 from scalecodec.utils.ss58 import ss58_encode, ss58_decode, get_ss58_format  # type: ignore[import-untyped]
 
-from scalecodec.base import ScaleBytes
+from scalecodec.base import ScaleBytes  # type: ignore[import-untyped]
 from typing import Union, Optional
 
 import time
@@ -46,8 +46,8 @@ except ImportError:
     bip39 = CryptoExtraFallback()
     sr25519 = CryptoExtraFallback()
     ed25519_zebra = CryptoExtraFallback()
-    nacl = CryptoExtraFallback()
-    eth_keys = CryptoExtraFallback()
+    nacl = CryptoExtraFallback()  # type: ignore[assignment]
+    eth_keys = CryptoExtraFallback()  # type: ignore[assignment]
 
 __all__ = ['Keypair', 'KeypairType', 'MnemonicLanguageCode']
 
@@ -128,7 +128,7 @@ class Keypair:
                     public_key = sr25519.public_from_secret_key(private_key)
 
             if self.crypto_type == KeypairType.ECDSA:
-                private_key_obj = eth_keys.datatypes.PrivateKey(private_key)
+                private_key_obj = eth_keys.datatypes.PrivateKey(private_key)  # type: ignore[arg-type]
                 public_key = private_key_obj.public_key.to_address()
                 ss58_address = private_key_obj.public_key.to_checksum_address()
 
@@ -150,11 +150,11 @@ class Keypair:
 
         self.ss58_format: int | None = ss58_format
 
-        self.public_key: bytes | None = public_key
+        self.public_key: bytes | None = public_key  # type: ignore[assignment]
 
         self.ss58_address: str | None = ss58_address
 
-        self.private_key: bytes | None = private_key
+        self.private_key: bytes | None = private_key  # type: ignore[assignment]
 
         self.mnemonic = None
 
@@ -224,7 +224,7 @@ class Keypair:
                 crypto_type=crypto_type
             )
 
-        keypair.mnemonic = mnemonic
+        keypair.mnemonic = mnemonic  # type: ignore[assignment]
 
         return keypair
 
@@ -287,7 +287,7 @@ class Keypair:
 
         suri_regex = re.match(r'^(?P<phrase>.[^/]+( .[^/]+)*)(?P<path>(//?[^/]+)*)(///(?P<password>.*))?$', suri)
 
-        suri_parts = suri_regex.groupdict()
+        suri_parts = suri_regex.groupdict()  # type: ignore[union-attr]
 
         if crypto_type == KeypairType.ECDSA:
             if language_code != MnemonicLanguageCode.ENGLISH:
@@ -310,7 +310,7 @@ class Keypair:
 
             if suri_parts['path'] != '':
 
-                derived_keypair.derive_path = suri_parts['path']
+                derived_keypair.derive_path = suri_parts['path']  # type: ignore[assignment]
 
                 if crypto_type not in [KeypairType.SR25519]:
                     raise NotImplementedError('Derivation paths for this crypto type not supported')
@@ -387,9 +387,9 @@ class Keypair:
 
         private_key, public_key = decode_pair_from_encrypted_json(json_data, passphrase)
 
-        if 'sr25519' in json_data['encoding']['content']:
+        if 'sr25519' in json_data['encoding']['content']:  # type: ignore[index]
             crypto_type = KeypairType.SR25519
-        elif 'ed25519' in json_data['encoding']['content']:
+        elif 'ed25519' in json_data['encoding']['content']:  # type: ignore[index]
             crypto_type = KeypairType.ED25519
             # Strip the nonce part of the private key
             private_key = private_key[0:32]
@@ -397,7 +397,7 @@ class Keypair:
             raise NotImplementedError("Unknown KeypairType found in JSON")
 
         if ss58_format is None and 'address' in json_data:
-            ss58_format = get_ss58_format(json_data['address'])
+            ss58_format = get_ss58_format(json_data['address'])  # type: ignore[index]
 
         return cls.create_from_private_key(private_key, public_key, ss58_format=ss58_format, crypto_type=crypto_type)
 
@@ -424,7 +424,7 @@ class Keypair:
         # https://github.com/polkadot-js/wasm/blob/master/packages/wasm-crypto/src/rs/sr25519.rs#L125
         converted_private_key = sr25519.convert_secret_key_to_ed25519(self.private_key)
 
-        encoded = encode_pair(self.public_key, converted_private_key, passphrase)
+        encoded = encode_pair(self.public_key, converted_private_key, passphrase)  # type: ignore[arg-type]
 
         json_data = {
             "encoded": b64encode(encoded).decode(),
@@ -453,7 +453,7 @@ class Keypair:
         if type(data) is ScaleBytes:
             data = bytes(data.data)
         elif data[0:2] == '0x':
-            data = bytes.fromhex(data[2:])
+            data = bytes.fromhex(data[2:])  # type: ignore[arg-type]
         elif type(data) is str:
             data = data.encode()
 
@@ -467,7 +467,7 @@ class Keypair:
             signature = ed25519_zebra.ed_sign(self.private_key, data)
 
         elif self.crypto_type == KeypairType.ECDSA:
-            signature = ecdsa_sign(self.private_key, data)
+            signature = ecdsa_sign(self.private_key, data)  # type: ignore[arg-type]
 
         else:
             raise ConfigurationError("Crypto type not supported")
@@ -491,7 +491,7 @@ class Keypair:
         if type(data) is ScaleBytes:
             data = bytes(data.data)
         elif data[0:2] == '0x':
-            data = bytes.fromhex(data[2:])
+            data = bytes.fromhex(data[2:])  # type: ignore[arg-type]
         elif type(data) is str:
             data = data.encode()
 
@@ -515,7 +515,7 @@ class Keypair:
         if not verified:
             # Another attempt with the data wrapped, as discussed in https://github.com/polkadot-js/extension/pull/743
             # Note: As Python apps are trusted sources on its own, no need to wrap data when signing from this lib
-            verified = crypto_verify_fn(signature, b'<Bytes>' + data + b'</Bytes>', self.public_key)
+            verified = crypto_verify_fn(signature, b'<Bytes>' + data + b'</Bytes>', self.public_key)  # type: ignore[operator]
 
         return verified
 
@@ -542,7 +542,7 @@ class Keypair:
             raise ConfigurationError('Only ed25519 keypair type supported')
         curve25519_public_key = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(recipient_public_key)
         recipient = nacl.public.PublicKey(curve25519_public_key)
-        private_key = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(self.private_key + self.public_key)
+        private_key = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(self.private_key + self.public_key)  # type: ignore[operator]
         sender = nacl.public.PrivateKey(private_key)
         box = nacl.public.Box(sender, recipient)
         return box.encrypt(message if isinstance(message, bytes) else message.encode("utf-8"), nonce)
@@ -565,7 +565,7 @@ class Keypair:
             raise ConfigurationError('No private key set to decrypt')
         if self.crypto_type != KeypairType.ED25519:
             raise ConfigurationError('Only ed25519 keypair type supported')
-        private_key = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(self.private_key + self.public_key)
+        private_key = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(self.private_key + self.public_key)  # type: ignore[operator]
         recipient = nacl.public.PrivateKey(private_key)
         curve25519_public_key = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(sender_public_key)
         sender = nacl.public.PublicKey(curve25519_public_key)

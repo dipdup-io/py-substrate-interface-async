@@ -24,6 +24,7 @@ from test import settings
 
 
 class ContractMetadataTestCase(unittest.IsolatedAsyncioTestCase):
+    substrate: SubstrateInterface
 
     @classmethod
     def setUpClass(cls):
@@ -285,6 +286,7 @@ class ContractMetadataV3TestCase(ContractMetadataV1TestCase):
 
 
 class FlipperMetadataV3TestCase(unittest.IsolatedAsyncioTestCase):
+    substrate: SubstrateInterface
 
     @classmethod
     def setUpClass(cls):
@@ -348,6 +350,7 @@ class FlipperMetadataV3TestCase(unittest.IsolatedAsyncioTestCase):
 
 
 class FlipperInstanceTestCase(unittest.IsolatedAsyncioTestCase):
+    substrate: SubstrateInterface
 
     @classmethod
     def setUpClass(cls):

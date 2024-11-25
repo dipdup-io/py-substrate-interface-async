@@ -17,7 +17,7 @@ import os
 import unittest
 from unittest.mock import MagicMock
 
-from scalecodec.type_registry import load_type_registry_file
+from scalecodec.type_registry import load_type_registry_file  # type: ignore[import-untyped]
 
 
 from substrateinterface import SubstrateInterface
