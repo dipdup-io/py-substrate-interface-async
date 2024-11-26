@@ -47,7 +47,7 @@ async def main():
     )
 
     # Initiate multisig tx
-    extrinsic = substrate.create_multisig_extrinsic(call, keypair_alice, multisig_account, era={'period': 64})
+    extrinsic = await substrate.create_multisig_extrinsic(call, keypair_alice, multisig_account, era={'period': 64})
 
     receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
@@ -56,7 +56,7 @@ async def main():
         exit()
 
     # Finalize multisig tx with other signatory
-    extrinsic = substrate.create_multisig_extrinsic(call, keypair_bob, multisig_account, era={'period': 64})
+    extrinsic = await substrate.create_multisig_extrinsic(call, keypair_bob, multisig_account, era={'period': 64})
 
     receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 

@@ -44,10 +44,10 @@ class SubscriptionsTestCase(unittest.IsolatedAsyncioTestCase):
             return {'update_nr': update_nr, 'subscription_id': subscription_id}
 
         storage_keys = [
-            self.substrate.create_storage_key(
+            await self.substrate.create_storage_key(
                 "System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"]
             ),
-            self.substrate.create_storage_key(
+            await self.substrate.create_storage_key(
                 "System", "Account", ["5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"]
             )
         ]

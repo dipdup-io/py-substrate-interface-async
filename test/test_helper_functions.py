@@ -15,7 +15,7 @@
 # limitations under the License.
 import os
 import unittest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 from scalecodec import GenericExtrinsic  # type: ignore[import-untyped]
 from scalecodec.type_registry import load_type_registry_file  # type: ignore[import-untyped]
@@ -80,7 +80,7 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
 
             raise NotImplementedError(method)
 
-        cls.substrate.rpc_request = MagicMock(side_effect=mocked_request)
+        cls.substrate.rpc_request = AsyncMock(side_effect=mocked_request)
 
         cls.empty_substrate = SubstrateInterface(url='dummy', ss58_format=42, type_registry_preset='kusama')
 
@@ -88,7 +88,7 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
 
             return {'jsonrpc': '2.0', 'result': None, 'id': 1}
 
-        cls.empty_substrate.rpc_request = MagicMock(side_effect=mocked_request)
+        cls.empty_substrate.rpc_request = AsyncMock(side_effect=mocked_request)
 
         cls.error_substrate = SubstrateInterface(url='wss://kusama-rpc.polkadot.io', ss58_format=2, type_registry_preset='kusama')
 
@@ -97,7 +97,7 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
         #         'code': -32602, 'message': 'Generic error message'
         #     }, 'id': 1}
         #
-        # cls.error_substrate.rpc_request = MagicMock(side_effect=mocked_request)
+        # cls.error_substrate.rpc_request = AsyncMock(side_effect=mocked_request)
 
     async def test_decode_scale(self):
         self.assertEqual(await self.substrate.decode_scale('Compact<u32>', '0x08'), 2)
@@ -112,14 +112,14 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(scale_obj.decode(ScaleBytes("0x1054657374")), "Test")
 
     async def test_get_type_definition(self):
-        info = self.substrate.get_type_definition('MultiSignature')
+        info = await self.substrate.get_type_definition('MultiSignature')
         self.assertDictEqual({'Ed25519': 'h512', 'Sr25519': 'h512', 'Ecdsa': '[u8; 65]'}, info)
 
-        info = self.substrate.get_type_definition('Balance')
+        info = await self.substrate.get_type_definition('Balance')
         self.assertEqual('u128', info)
 
     async def test_get_metadata(self):
-        metadata = self.substrate.get_metadata()
+        metadata = await self.substrate.get_metadata()
 
         self.assertIsNotNone(metadata)
         self.assertEqual(metadata.__class__.__name__, 'MetadataVersioned')
@@ -131,17 +131,17 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(module['spec_version'], 2023)
 
     async def test_get_metadata_call_function(self):
-        call_function = self.substrate.get_metadata_call_function("Balances", "transfer")
+        call_function = await self.substrate.get_metadata_call_function("Balances", "transfer")
         self.assertEqual("transfer", call_function.name)
         self.assertEqual('dest', call_function.args[0].name)
         self.assertEqual('value', call_function.args[1].name)
 
     async def test_get_metadata_call_functions(self):
-        call_functions = self.substrate.get_metadata_call_functions()
+        call_functions = await self.substrate.get_metadata_call_functions()
         self.assertGreater(len(call_functions), 0)
 
     async def test_get_metadata_event(self):
-        event = self.substrate.get_metadata_event("Balances", "Transfer")
+        event = await self.substrate.get_metadata_event("Balances", "Transfer")
         self.assertEqual("Transfer", event.name)
         self.assertEqual('AccountId', event.args[0].type)
         self.assertEqual('AccountId', event.args[1].type)
@@ -179,12 +179,12 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
         self.assertGreater(len(storages), 0)
 
     async def test_get_metadata_error(self):
-        error = self.substrate.get_metadata_error("System", "InvalidSpecName")
+        error = await self.substrate.get_metadata_error("System", "InvalidSpecName")
         self.assertEqual("InvalidSpecName", error.name)
         self.assertIsNotNone(error.docs)
 
     async def test_get_metadata_errors(self):
-        errors = self.substrate.get_metadata_errors()
+        errors = await self.substrate.get_metadata_errors()
         self.assertGreater(len(errors), 0)
 
     async def test_helper_functions_should_return_null_not_exists(self):
@@ -198,12 +198,18 @@ class TestHelperFunctions(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(await self.empty_substrate.get_block_runtime_version(block_hash='0x'))
 
     async def test_helper_functions_invalid_input(self):
-        self.assertRaises(SubstrateRequestException, self.error_substrate.get_block_number, "0x6666666666666666")
-        self.assertRaises(SubstrateRequestException, self.error_substrate.get_block_hash, -1)
-        self.assertRaises(SubstrateRequestException, self.error_substrate.get_block_header, '0x')
-        self.assertRaises(SubstrateRequestException, self.error_substrate.get_block_metadata, '0x')
-        self.assertRaises(SubstrateRequestException, self.error_substrate.get_block_runtime_version, '0x')
-        self.assertRaises(ValueError, self.error_substrate.query, 'System', 'Account', ['0x'])
+        with self.assertRaises(SubstrateRequestException):
+            await self.error_substrate.get_block_number("0x6666666666666666")
+        with self.assertRaises(SubstrateRequestException):
+            await self.error_substrate.get_block_hash(-1)
+        with self.assertRaises(SubstrateRequestException):
+            await self.error_substrate.get_block_header('0x')
+        with self.assertRaises(SubstrateRequestException):
+            await self.error_substrate.get_block_metadata('0x')
+        with self.assertRaises(SubstrateRequestException):
+            await self.error_substrate.get_block_runtime_version('0x')
+        with self.assertRaises(ValueError):
+            await self.error_substrate.query('System', 'Account', ['0x'])
 
     async def test_storage_function_param_info(self):
         storage_function = await self.substrate.get_metadata_storage_function("System", "Account")
@@ -227,7 +233,7 @@ class TestHelperFunctionsV14(TestHelperFunctions):
         self.assertEqual("Blake2_128Concat", storage.type['Map']['hashers'][0])
 
     async def test_get_metadata_event(self):
-        event = self.substrate.get_metadata_event("Balances", "Transfer")
+        event = await self.substrate.get_metadata_event("Balances", "Transfer")
         self.assertEqual("Transfer", event.name)
         self.assertEqual('scale_info::0', event.args[0].type)
         self.assertEqual('scale_info::0', event.args[1].type)
@@ -300,7 +306,7 @@ class TestRPCHelperFunctions(unittest.IsolatedAsyncioTestCase):
 
             return await orig_rpc_request(method, params)
 
-        cls.substrate.rpc_request = MagicMock(side_effect=mocked_request)   # type: ignore[method-assign]
+        cls.substrate.rpc_request = AsyncMock(side_effect=mocked_request)   # type: ignore[method-assign]
 
     async def test_pending_extrinsics(self):
         pending_extrinsics = await self.substrate.retrieve_pending_extrinsics()

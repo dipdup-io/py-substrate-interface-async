@@ -44,7 +44,7 @@ try:
     if receipt.is_success:
 
         print('✅ Success, triggered events:')
-        for event in receipt.triggered_events:
+        for event in (await receipt.triggered_events()):
             print(f'* {event.value}')
 
     else:
@@ -132,7 +132,7 @@ call = await substrate.compose_call(
 )
 
 # Initiate multisig tx
-extrinsic = substrate.create_multisig_extrinsic(call, keypair_alice, multisig_account, era={'period': 64})
+extrinsic = await substrate.create_multisig_extrinsic(call, keypair_alice, multisig_account, era={'period': 64})
 
 receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
@@ -141,7 +141,7 @@ if not receipt.is_success:
     exit()
 
 # Finalize multisig tx with other signatory
-extrinsic = substrate.create_multisig_extrinsic(call, keypair_bob, multisig_account, era={'period': 64})
+extrinsic = await substrate.create_multisig_extrinsic(call, keypair_bob, multisig_account, era={'period': 64})
 
 receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
@@ -321,10 +321,10 @@ substrate = SubstrateInterface(url="ws://127.0.0.1:9944")
 
 # Accounts to track
 storage_keys = [
-    substrate.create_storage_key(
+    await substrate.create_storage_key(
         "System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"]
     ),
-    substrate.create_storage_key(
+    await substrate.create_storage_key(
         "System", "Account", ["5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"]
     )
 ]

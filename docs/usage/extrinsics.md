@@ -64,7 +64,7 @@ print(receipt.weight) # 359262000
 print(receipt.total_fee_amount) # 2483332406
 print(receipt.error_message['docs']) # [' Sender is not a sub-account.']
 
-for event in receipt.triggered_events:
+for event in (await receipt.triggered_events()):
     print(f'* {event.value}')
 ```
 
@@ -100,7 +100,7 @@ call = await substrate.compose_call(
     }
 )
 
-extrinsic = substrate.create_multisig_extrinsic(call, keypair_alice, multisig_account, era={'period': 64})
+extrinsic = await substrate.create_multisig_extrinsic(call, keypair_alice, multisig_account, era={'period': 64})
 receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 ```
 
@@ -119,7 +119,7 @@ multisig_account = substrate.generate_multisig_account(
     threshold=2
 )
 
-extrinsic = substrate.create_multisig_extrinsic(call, keypair_charlie, multisig_account, era={'period': 64})
+extrinsic = await substrate.create_multisig_extrinsic(call, keypair_charlie, multisig_account, era={'period': 64})
 receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 ```
 
@@ -132,7 +132,7 @@ The structure of certain call parameters can be quite complex, then the `get_par
 can provide more insight how to construct those parameters:
 
 ```python
-call_function = substrate.get_metadata_call_function("XTokens", "transfer")
+call_function = await substrate.get_metadata_call_function("XTokens", "transfer")
 
 param_info = call_function.get_param_info()
 # {

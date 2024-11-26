@@ -15,7 +15,7 @@
 # limitations under the License.
 import os
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 from scalecodec.type_registry import load_type_registry_file  # type: ignore[import-untyped]
 
@@ -39,9 +39,9 @@ class RPCCompatilibityTestCase(unittest.IsolatedAsyncioTestCase):
             'MetadataVersioned', ScaleBytes(cls.metadata_fixture_dict['V14'])
         )
         metadata_decoder.decode()
-        cls.substrate.get_block_metadata = MagicMock(return_value=metadata_decoder)
+        cls.substrate.get_block_metadata = AsyncMock(return_value=metadata_decoder)
 
-        def mocked_query(module, storage_function, block_hash):
+        async def mocked_query(module, storage_function, block_hash):
             if module == 'Session' and storage_function == 'Validators':
                 if block_hash == '0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93':
                     vec = Vec()
@@ -52,7 +52,7 @@ class RPCCompatilibityTestCase(unittest.IsolatedAsyncioTestCase):
 
             raise ValueError(f"Unsupported mocked query {module}.{storage_function} @ {block_hash}")
 
-        def mocked_request(method, params, result_handler=None):
+        async def mocked_request(method, params, result_handler=None):
 
             if method in ['chain_getBlockHash', 'chain_getHead', 'chain_getFinalisedHead', 'chain_getFinalizedHead']:
                 return {
@@ -161,8 +161,8 @@ class RPCCompatilibityTestCase(unittest.IsolatedAsyncioTestCase):
 
             raise ValueError(f"Unsupported mocked method {method}")
 
-        cls.substrate.rpc_request = MagicMock(side_effect=mocked_request)
-        cls.substrate.query = MagicMock(side_effect=mocked_query)
+        cls.substrate.rpc_request = AsyncMock(side_effect=mocked_request)
+        cls.substrate.query = AsyncMock(side_effect=mocked_query)
 
     async def test_get_block_by_head(self):
 
@@ -170,7 +170,7 @@ class RPCCompatilibityTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual('0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93', block['header']['hash'])
 
     async def test_get_chain_head(self):
-        block_hash = self.substrate.get_chain_head()
+        block_hash = await self.substrate.get_chain_head()
         self.assertEqual('0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93', block_hash)
 
 

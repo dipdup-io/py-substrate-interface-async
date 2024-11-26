@@ -35,7 +35,7 @@ class KusamaTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_type_registry_compatibility(self):
 
-        for scale_type in self.substrate.get_type_registry():
+        for scale_type in await self.substrate.get_type_registry():
             obj = self.substrate.runtime_config.get_decoder_class(scale_type)
 
             self.assertIsNotNone(obj, '{} not supported'.format(scale_type))
@@ -53,7 +53,7 @@ class PolkadotTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_type_registry_compatibility(self):
 
-        for scale_type in self.substrate.get_type_registry():
+        for scale_type in await self.substrate.get_type_registry():
 
             obj = self.substrate.runtime_config.get_decoder_class(scale_type)
 
@@ -72,7 +72,7 @@ class RococoTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_type_registry_compatibility(self):
 
-        for scale_type in self.substrate.get_type_registry():
+        for scale_type in await self.substrate.get_type_registry():
 
             obj = self.substrate.runtime_config.get_decoder_class(scale_type)
 
@@ -91,7 +91,7 @@ class RococoTypeRegistryTestCase(unittest.IsolatedAsyncioTestCase):
 #
 #     async def test_type_registry_compatibility(self):
 #
-#         for scale_type in self.substrate.get_type_registry():
+#         for scale_type in await self.substrate.get_type_registry():
 #
 #             obj = self.substrate.runtime_config.get_decoder_class(scale_type)
 #

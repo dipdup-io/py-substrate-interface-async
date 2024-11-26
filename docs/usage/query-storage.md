@@ -56,13 +56,13 @@ This will batch all the requested storage entries in one RPC request.
 
 ```python
 storage_keys = [
-    substrate.create_storage_key(
+    await substrate.create_storage_key(
         "System", "Account", ["F4xQKRUagnSGjFqafyhajLs94e7Vvzvr8ebwYJceKpr8R7T"]
     ),
-    substrate.create_storage_key(
+    await substrate.create_storage_key(
         "System", "Account", ["GSEX8kR4Kz5UZGhvRUCJG93D5hhTAoVZ5tAe6Zne7V42DSi"]
     ),
-    substrate.create_storage_key(
+    await substrate.create_storage_key(
         "Staking", "Bonded", ["GSEX8kR4Kz5UZGhvRUCJG93D5hhTAoVZ5tAe6Zne7V42DSi"]
     )
 ]

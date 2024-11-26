@@ -29,6 +29,10 @@ class TestInit(unittest.IsolatedAsyncioTestCase):
         cls.kusama_substrate = SubstrateInterface(url=settings.KUSAMA_NODE_URL)
         cls.polkadot_substrate = SubstrateInterface(url=settings.POLKADOT_NODE_URL)
 
+    async def asyncSetUp(self):
+        await self.kusama_substrate.init_props()
+        await self.polkadot_substrate.init_props()
+
     async def test_chain(self):
         self.assertEqual('Kusama', self.kusama_substrate.chain)
         self.assertEqual('Polkadot', self.polkadot_substrate.chain)
@@ -104,10 +108,10 @@ class TestInit(unittest.IsolatedAsyncioTestCase):
     async def test_strict_scale_decode(self):
 
         with self.assertRaises(RemainingScaleBytesNotEmptyException):
-            self.kusama_substrate.decode_scale('u8', ScaleBytes('0x0101'))
+            await self.kusama_substrate.decode_scale('u8', ScaleBytes('0x0101'))
 
         with SubstrateInterface(url=settings.KUSAMA_NODE_URL, config={'strict_scale_decode': False}) as substrate:
-            result = substrate.decode_scale('u8', ScaleBytes('0x0101'))
+            result = await substrate.decode_scale('u8', ScaleBytes('0x0101'))
             self.assertEqual(result, 1)
 
 

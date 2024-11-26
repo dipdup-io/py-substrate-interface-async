@@ -810,7 +810,7 @@ class SubstrateInterface:
 
         await self.init_runtime(block_hash=block_hash)
 
-        metadata_pallet = await self.metadata.get_metadata_pallet(module)
+        metadata_pallet = self.metadata.get_metadata_pallet(module)
 
         if not metadata_pallet:
             raise StorageFunctionNotFound(f'Pallet "{module}" not found')
@@ -884,7 +884,7 @@ class SubstrateInterface:
                             key_type_string.append(f'[u8; {concat_hash_len(key_hashers[n])}]')
                             key_type_string.append(param_types[n])
 
-                        item_key_obj = self.decode_scale(
+                        item_key_obj = await self.decode_scale(
                             type_string=f"({', '.join(key_type_string)})",
                             scale_bytes='0x' + item[0][len(prefix):],
                             return_scale_obj=True,
@@ -932,10 +932,10 @@ class SubstrateInterface:
 
         ```
         storage_keys = [
-            substrate.create_storage_key(
+            await substrate.create_storage_key(
                 "System", "Account", ["F4xQKRUagnSGjFqafyhajLs94e7Vvzvr8ebwYJceKpr8R7T"]
             ),
-            substrate.create_storage_key(
+            await substrate.create_storage_key(
                 "System", "Account", ["GSEX8kR4Kz5UZGhvRUCJG93D5hhTAoVZ5tAe6Zne7V42DSi"]
             )
         ]
@@ -1029,7 +1029,7 @@ class SubstrateInterface:
 
         if module == 'Substrate':
             # Search for 'well-known' storage keys
-            return self.__query_well_known(storage_function, block_hash)
+            return await self.__query_well_known(storage_function, block_hash)
 
         # Search storage call in metadata
         metadata_pallet = self.metadata.get_metadata_pallet(module)
@@ -1101,7 +1101,7 @@ class SubstrateInterface:
 
                     return obj
 
-    def __query_well_known(self, name: str, block_hash: str) -> ScaleType:
+    async def __query_well_known(self, name: str, block_hash: str) -> ScaleType:
         """
         Query well-known storage keys as defined in Substrate
 
@@ -1117,7 +1117,7 @@ class SubstrateInterface:
         if name not in WELL_KNOWN_STORAGE_KEYS:
             raise StorageFunctionNotFound(f'Well known storage key for "{name}" not found')
 
-        result = self.get_storage_by_key(block_hash, WELL_KNOWN_STORAGE_KEYS[name]['storage_key'])
+        result = await self.get_storage_by_key(block_hash, WELL_KNOWN_STORAGE_KEYS[name]['storage_key'])
         obj = self.runtime_config.create_scale_object(
             WELL_KNOWN_STORAGE_KEYS[name]['value_type_string']
         )
@@ -2464,9 +2464,9 @@ class SubstrateInterface:
 
             async def result_handler(message, update_nr, subscription_id):
 
-                new_block = decode_block({'header': message['params']['result']})
+                new_block = await decode_block({'header': message['params']['result']})
 
-                subscription_result = subscription_handler(new_block, update_nr, subscription_id)
+                subscription_result = await subscription_handler(new_block, update_nr, subscription_id)
 
                 if subscription_result is not None:
                     # Handler returned end result: unsubscribe from further updates
@@ -3504,11 +3504,11 @@ class QueryMapResult:
 
         return result.records
 
-    def __iter__(self):
+    async def __aiter__(self):
         self.current_index = -1
         return self
 
-    def __next__(self):
+    async def __anext__(self):
         self.current_index += 1
 
         if self.max_results is not None and self.current_index >= self.max_results:
@@ -3517,7 +3517,7 @@ class QueryMapResult:
 
         if self.current_index >= len(self.records) and not self.loading_complete:
             # try to retrieve next page from node
-            self.records += self.retrieve_next_page(start_key=self.last_key)
+            self.records += await self.retrieve_next_page(start_key=self.last_key)
 
         if self.current_index >= len(self.records):
             self.loading_complete = True

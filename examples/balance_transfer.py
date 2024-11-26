@@ -59,7 +59,7 @@ async def main():
         if receipt.is_success:
 
             print('✅ Success, triggered events:')
-            for event in receipt.triggered_events:
+            for event in (await receipt.triggered_events()):
                 print(f'* {event.value}')
 
         else:

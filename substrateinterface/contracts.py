@@ -225,7 +225,7 @@ class ContractMetadata:
         -------
         str
         """
-        assert self.metadata_version
+        # assert self.metadata_version
         if self.metadata_version >= 1:
 
             if type_id > len(self.metadata_dict['types']):
@@ -675,9 +675,8 @@ class ContractCode:
         ContractInstance
         """
         # FIXME: mypy
-        assert self.substrate
-        assert self.substrate.metadata
-        assert self.code_hash
+        # assert self.substrate
+        # assert self.substrate.metadata
 
         # Lookup constructor
         data = await self.metadata.generate_constructor_data(name=constructor, args=args)  # type: ignore[union-attr]
@@ -703,6 +702,7 @@ class ContractCode:
                 }
             )
         else:
+            assert self.code_hash
 
             call = await self.substrate.compose_call(
                 call_module='Contracts',
