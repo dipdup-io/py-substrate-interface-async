@@ -115,7 +115,7 @@ class QueryTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_well_known_pallet_version(self):
 
-        sf = self.kusama_substrate.get_metadata_storage_function("Balances", "PalletVersion")
+        sf = await self.kusama_substrate.get_metadata_storage_function("Balances", "PalletVersion")
         self.assertEqual(sf.value['name'], ':__STORAGE_VERSION__:')
 
         result = await self.kusama_substrate.query("Balances", "PalletVersion")

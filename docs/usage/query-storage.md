@@ -36,7 +36,7 @@ Some storage functions need parameters and some of those parameter types can be 
 To retrieve more information how to format those storage function parameters, the helper function `get_param_info()` is available:
 
 ```python
-storage_function = substrate.get_metadata_storage_function("Tokens", "TotalIssuance")
+storage_function = await substrate.get_metadata_storage_function("Tokens", "TotalIssuance")
 
 print(storage_function.get_param_info())
 # [{

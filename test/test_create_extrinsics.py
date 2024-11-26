@@ -61,7 +61,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
 
         extrinsic = await self.kusama_substrate.create_signed_extrinsic(call=call, keypair=self.keypair, tip=1)
 
-        decoded_extrinsic = self.kusama_substrate.create_scale_object("Extrinsic")
+        decoded_extrinsic = await self.kusama_substrate.create_scale_object("Extrinsic")
         decoded_extrinsic.decode(extrinsic.data)
 
         self.assertEqual(decoded_extrinsic['call']['call_module'].name, 'Balances')
@@ -145,7 +145,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             threshold=2
         )
 
-        extrinsic = self.kusama_substrate.create_multisig_extrinsic(call, self.keypair, multisig_account, era={'period': 64})
+        extrinsic = await self.kusama_substrate.create_multisig_extrinsic(call, self.keypair, multisig_account, era={'period': 64})
 
         # Decode extrinsic again as test
         extrinsic.decode(extrinsic.data)
@@ -163,7 +163,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             }
         )
 
-        extrinsic = self.kusama_substrate.create_unsigned_extrinsic(call)
+        extrinsic = await self.kusama_substrate.create_unsigned_extrinsic(call)
         self.assertEqual(str(extrinsic.data), '0x280402000ba09cc0317501')
 
     async def test_payment_info(self):
@@ -209,7 +209,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             }
         )
 
-        signature_payload = self.kusama_substrate.generate_signature_payload(call=call)
+        signature_payload = await self.kusama_substrate.generate_signature_payload(call=call)
 
         self.assertEqual(signature_payload.length, 32)
 
@@ -245,6 +245,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0x5bcb59fdfc2ba852dabf31447b84764df85c8f64073757ea800f25b48e63ebd2",
             block_hash="0x8dae706d0f4882a7db484e708e27d9363a3adfa53baaac8b58c30f7c519a2520"
         )
+        await result.process_events()
 
         self.assertTrue(result.is_success)
 
@@ -253,21 +254,24 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0x43ef739a8e4782e306908e710f333e65843fb35a57ec2a19df21cdc12258fbd8",
             block_hash="0x8ab60dacd8535d948a755f72a9e09274d17f00693bbbdb55fa898db60a9ce580"
         )
+        await result.process_events()
 
         self.assertTrue(result.is_success)
 
     async def test_extrinsic_receipt_by_identifier(self):
-        receipt = self.polkadot_substrate.retrieve_extrinsic_by_identifier("11529741-2")
+        receipt = await self.polkadot_substrate.retrieve_extrinsic_by_identifier("11529741-2")
+
         self.assertEqual(receipt.extrinsic.value['address'], '16amaf1FuEFHstAoKjQiq8ZLWR6zjsYTvAiyHupA8DJ9Mhwu')
         self.assertEqual(
             receipt.extrinsic.value['call']['call_args'][0]['value'], '1pg9GBY7Xm5wZSNBr9BrmS978f5g33PGt45PyjiwKpU4hZG'
         )
 
     async def test_extrinsic_receipt_by_hash(self):
-        receipt = self.polkadot_substrate.retrieve_extrinsic_by_hash(
+        receipt = await self.polkadot_substrate.retrieve_extrinsic_by_hash(
             block_hash="0x9f726d0ba1e7622c3df8c9f1eacdd1df03deabfc1d788623fc47f494e18c3f38",
             extrinsic_hash="0xe1ca67a62655d45863be7bf87004a79351bf4a798ba92f666d3a8152bb769d0c"
         )
+
         self.assertEqual(receipt.extrinsic.value['address'], '16amaf1FuEFHstAoKjQiq8ZLWR6zjsYTvAiyHupA8DJ9Mhwu')
         self.assertEqual(
             receipt.extrinsic.value['call']['call_args'][0]['value'], '1pg9GBY7Xm5wZSNBr9BrmS978f5g33PGt45PyjiwKpU4hZG'
@@ -279,11 +283,14 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0xa5f2b9f4b8ea9f357780dd49010c99708f580a02624e4500af24b20b92773100",
             block_hash="0x4b459839cc0b8c807061b5bfc68ca78b2039296174ed0a7754a70b84b287181e"
         )
+        await result.process_events()
 
         self.assertFalse(result.is_success)
 
     async def test_check_extrinsic_receipt_failed_scaleinfo(self):
-        receipt = self.kusama_substrate.retrieve_extrinsic_by_identifier("15237367-80")
+        receipt = await self.kusama_substrate.retrieve_extrinsic_by_identifier("15237367-80")
+        await receipt.process_events()
+
         self.assertFalse(receipt.is_success)
 
     async def test_check_extrinsic_failed_error_message(self):
@@ -292,6 +299,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0xa5f2b9f4b8ea9f357780dd49010c99708f580a02624e4500af24b20b92773100",
             block_hash="0x4b459839cc0b8c807061b5bfc68ca78b2039296174ed0a7754a70b84b287181e"
         )
+        await result.process_events()
 
         self.assertEqual(result.error_message['name'], 'LiquidityRestrictions')
 
@@ -301,18 +309,21 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0x6147478693eb1ccbe1967e9327c5db093daf5f87bbf6822b4bd8d3dc3bf4e356",
             block_hash="0x402f22856baf7aaca9510c317b1c392e4d9e6133aabcc0c26f6c5b40dcde70a7"
         )
+        await result.process_events()
 
         self.assertEqual(result.error_message['name'], 'MustBeVoter')
 
     async def test_check_extrinsic_failed_error_message_portable_registry(self):
-        receipt = self.kusama_substrate.retrieve_extrinsic_by_identifier("11333518-4")
+        receipt = await self.kusama_substrate.retrieve_extrinsic_by_identifier("11333518-4")
+        await receipt.process_events()
 
         self.assertFalse(receipt.is_success)
         self.assertEqual(881719000, receipt.weight)
         self.assertEqual(receipt.error_message['name'], 'InsufficientBalance')
 
     async def test_check_extrinsic_weight_v2(self):
-        receipt = self.kusama_substrate.retrieve_extrinsic_by_identifier("14963132-10")
+        receipt = await self.kusama_substrate.retrieve_extrinsic_by_identifier("14963132-10")
+        await receipt.process_events()
 
         self.assertTrue(receipt.is_success)
         self.assertEqual({'ref_time': 153773000}, receipt.weight)
@@ -323,6 +334,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0xa5f2b9f4b8ea9f357780dd49010c99708f580a02624e4500af24b20b92773100",
             block_hash="0x4b459839cc0b8c807061b5bfc68ca78b2039296174ed0a7754a70b84b287181e"
         )
+        await result.process_events()
 
         self.assertEqual(2583332366, result.total_fee_amount)
 
@@ -332,6 +344,8 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0x5937b3fc03ffc62c84d536c3f1949e030b61ca5c680bfd237726e55a75840d1d",
             block_hash="0x9d693c4fa4d54893bd6b0916843fcb5b7380f43cbea5c462be9213f536fd9a49"
         )
+        await result.process_events()
+
         self.assertTrue(result.is_success)
         self.assertEqual(161331753, result.total_fee_amount)
 
@@ -341,13 +355,15 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0x7347df791b8e47a5eba29c2123783cac638acbe63b4a99024eade4e7805d7ab7",
             block_hash="0xffbf45b4dfa1be1929b519d5bf6558b2c972ea2e0fe24b623111b238cf67e095"
         )
+        await result.process_events()
 
         self.assertEqual(2749998966, result.total_fee_amount)
 
     async def test_check_extrinsic_total_fee_amount_new_event(self):
-        receipt = self.polkadot_substrate.retrieve_extrinsic_by_identifier("12031188-2")
+        result = await self.polkadot_substrate.retrieve_extrinsic_by_identifier("12031188-2")
+        await result.process_events()
 
-        self.assertEqual(156673273, receipt.total_fee_amount)
+        self.assertEqual(156673273, result.total_fee_amount)
 
     async def test_check_failed_extrinsic_weight(self):
         result = ExtrinsicReceipt(
@@ -355,6 +371,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0xa5f2b9f4b8ea9f357780dd49010c99708f580a02624e4500af24b20b92773100",
             block_hash="0x4b459839cc0b8c807061b5bfc68ca78b2039296174ed0a7754a70b84b287181e"
         )
+        await result.process_events()
 
         self.assertEqual(216625000, result.weight)
 
@@ -364,6 +381,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0x5bcb59fdfc2ba852dabf31447b84764df85c8f64073757ea800f25b48e63ebd2",
             block_hash="0x8dae706d0f4882a7db484e708e27d9363a3adfa53baaac8b58c30f7c519a2520"
         )
+        await result.process_events()
 
         self.assertEqual(10000, result.weight)
 
@@ -373,6 +391,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0x7347df791b8e47a5eba29c2123783cac638acbe63b4a99024eade4e7805d7ab7",
             block_hash="0xffbf45b4dfa1be1929b519d5bf6558b2c972ea2e0fe24b623111b238cf67e095"
         )
+        await result.process_events()
 
         self.assertEqual(252000000, result.weight)
 
@@ -382,6 +401,8 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
             extrinsic_hash="0x5937b3fc03ffc62c84d536c3f1949e030b61ca5c680bfd237726e55a75840d1d",
             block_hash="0x9d693c4fa4d54893bd6b0916843fcb5b7380f43cbea5c462be9213f536fd9a49"
         )
+        await result.process_events()
+
         self.assertTrue(result.is_success)
         self.assertEqual(1234000, result.weight)
 
@@ -393,8 +414,8 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(AttributeError):
             result.is_success = False
 
-        with self.assertRaises(AttributeError):
-            result.triggered_events = False
+        # with self.assertRaises(AttributeError):
+        #     result.triggered_events = False
 
     async def test_extrinsic_result_no_blockhash_check_events(self):
 
@@ -404,7 +425,7 @@ class CreateExtrinsicsTestCase(unittest.IsolatedAsyncioTestCase):
         )
 
         with self.assertRaises(ValueError) as cm:
-            result.triggered_events
+            await result.triggered_events()
         self.assertEqual('ExtrinsicReceipt can\'t retrieve events because it\'s unknown which block_hash it is '
                          'included, manually set block_hash or use `wait_for_inclusion` when sending extrinsic',
                          str(cm.exception))

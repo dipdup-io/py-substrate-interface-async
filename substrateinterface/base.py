@@ -15,6 +15,7 @@
 # limitations under the License.
 
 
+from collections.abc import AsyncIterator
 from functools import cached_property
 import warnings
 
@@ -209,10 +210,11 @@ class SubstrateInterface:
 
         self.extensions.unregister_all()
 
-    def __enter__(self):
+    async def __aenter__(self):
+        await self.init_props()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
     @staticmethod
@@ -675,6 +677,7 @@ class SubstrateInterface:
         -------
 
         """
+        await self.init_props()
 
         if block_id and block_hash:
             raise ValueError('Cannot provide block_hash and block_id at the same time')
@@ -986,7 +989,7 @@ class SubstrateInterface:
 
         Example of subscription handler:
         ```
-        def subscription_handler(obj, update_nr, subscription_id):
+        async def subscription_handler(obj, update_nr, subscription_id):
 
             if update_nr == 0:
                 print('Initial data:', obj.value)
@@ -1063,10 +1066,10 @@ class SubstrateInterface:
         if callable(subscription_handler):
 
             # Wrap subscription handler to discard storage key arg
-            def result_handler(storage_key, updated_obj, update_nr, subscription_id):
-                return subscription_handler(updated_obj, update_nr, subscription_id)
+            async def result_handler(storage_key, updated_obj, update_nr, subscription_id):
+                return await subscription_handler(updated_obj, update_nr, subscription_id)
 
-            return self.subscribe_storage([storage_key], result_handler)
+            return await self.subscribe_storage([storage_key], result_handler)
 
         else:
 
@@ -1170,7 +1173,7 @@ class SubstrateInterface:
 
         Example of a subscription handler:
         ```
-        def subscription_handler(storage_key, obj, update_nr, subscription_id):
+        async def subscription_handler(storage_key, obj, update_nr, subscription_id):
 
             if update_nr == 0:
                 print('Initial data:', storage_key, obj.value)
@@ -1225,7 +1228,7 @@ class SubstrateInterface:
                 updated_obj.decode(check_remaining=self.config.get('strict_scale_decode'))
                 updated_obj.meta_info = {'result_found': result_found}
 
-                subscription_result = subscription_handler(storage_key, updated_obj, update_nr, subscription_id)
+                subscription_result = await subscription_handler(storage_key, updated_obj, update_nr, subscription_id)
 
                 if subscription_result is not None:
                     # Handler returned end result: unsubscribe from further updates
@@ -2646,11 +2649,14 @@ class SubstrateInterface:
         -------
         ExtrinsicReceipt
         """
-        return await ExtrinsicReceipt.create_from_extrinsic_identifier(
-            substrate=self, extrinsic_identifier=extrinsic_identifier
+        receipt = await ExtrinsicReceipt.create_from_extrinsic_identifier(
+            substrate=self,
+            extrinsic_identifier=extrinsic_identifier,
         )
+        await receipt.retrieve_extrinsic()
+        return receipt
 
-    def retrieve_extrinsic_by_hash(self, block_hash: str, extrinsic_hash: str) -> "ExtrinsicReceipt":
+    async def retrieve_extrinsic_by_hash(self, block_hash: str, extrinsic_hash: str) -> "ExtrinsicReceipt":
         """
         Retrieve an extrinsic by providing the block_hash and the extrinsic hash
 
@@ -2663,11 +2669,13 @@ class SubstrateInterface:
         -------
         ExtrinsicReceipt
         """
-        return ExtrinsicReceipt(
+        receipt = ExtrinsicReceipt(
             substrate=self,
             block_hash=block_hash,
             extrinsic_hash=extrinsic_hash
         )
+        await receipt.retrieve_extrinsic()
+        return receipt
 
     async def get_extrinsics(self, block_hash: str | None = None, block_number: int | None = None) -> list:  # type: ignore[return]
         """
@@ -3204,7 +3212,6 @@ class ExtrinsicReceipt:
             raise Exception('Call retrieve_extrinsic() first')
         return self.__extrinsic
 
-    # @property
     async def triggered_events(self) -> list:
         """
         Gets triggered events for submitted extrinsic. block_hash where extrinsic is included is required, manually
@@ -3219,7 +3226,7 @@ class ExtrinsicReceipt:
                 raise ValueError("ExtrinsicReceipt can't retrieve events because it's unknown which block_hash it is "
                                  "included, manually set block_hash or use `wait_for_inclusion` when sending extrinsic")
 
-            if self.extrinsic_idx is None:
+            if self.__extrinsic_idx is None:
                 await self.retrieve_extrinsic()
 
             self.__triggered_events = []  # type: ignore[assignment]
@@ -3472,7 +3479,7 @@ class ExtrinsicReceipt:
         return self[name]
 
 
-class QueryMapResult:
+class QueryMapResult(AsyncIterator):
 
     def __init__(self, records: list, page_size: int, module: str | None = None, storage_function: str | None = None,
                  params: Optional[list] = None, block_hash: str | None = None, substrate: SubstrateInterface | None = None,
@@ -3504,7 +3511,7 @@ class QueryMapResult:
 
         return result.records
 
-    async def __aiter__(self):
+    def __aiter__(self):
         self.current_index = -1
         return self
 
@@ -3513,7 +3520,7 @@ class QueryMapResult:
 
         if self.max_results is not None and self.current_index >= self.max_results:
             self.loading_complete = True
-            raise StopIteration
+            raise StopAsyncIteration
 
         if self.current_index >= len(self.records) and not self.loading_complete:
             # try to retrieve next page from node
@@ -3521,7 +3528,7 @@ class QueryMapResult:
 
         if self.current_index >= len(self.records):
             self.loading_complete = True
-            raise StopIteration
+            raise StopAsyncIteration
 
         return self.records[self.current_index]
 

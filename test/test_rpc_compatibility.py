@@ -158,6 +158,35 @@ class RPCCompatilibityTestCase(unittest.IsolatedAsyncioTestCase):
                     "result": {"methods": ['author_submitExtrinsic', 'author_submitAndWatchExtrinsic', 'author_unwatchExtrinsic', 'author_pendingExtrinsics', 'chain_getBlockHash', 'chain_getHeader', 'chain_getBlock', 'chain_getFinalizedHead', 'chain_subscribeNewHead', 'chain_subscribeFinalizedHeads', 'chain_unsubscribeNewHead', 'chain_subscribeNewHeads', 'chain_unsubscribeNewHeads', 'chain_unsubscribeFinalizedHeads', 'state_getRuntimeVersion', 'state_getMetadata', 'state_getStorage', 'state_getKeysPaged', 'state_queryStorageAt', 'state_call', 'state_subscribeRuntimeVersion', 'state_unsubscribeRuntimeVersion', 'state_subscribeStorage', 'state_unsubscribeStorage', 'system_localPeerId', 'system_nodeRoles', 'system_localListenAddresses', 'system_chain', 'system_properties', 'system_name', 'system_version', 'system_chainType', 'system_health', 'system_dryRun', 'system_accountNextIndex', 'payment_queryFeeDetails', 'payment_queryInfo', 'dev_newBlock', 'dev_setStorage', 'dev_timeTravel', 'dev_setHead', 'dev_dryRun', 'rpc_methods']},
                     "id": 1
                 }
+            # FIXME: Random data
+            elif method == 'system_name':
+                return {
+                    "jsonrpc": "2.0",
+                    "result": "substrate-node",
+                    "id": 1
+                }
+            elif method == 'system_properties':
+                return {
+                    "jsonrpc": "2.0",
+                    "result": {
+                        "ss58Format": 42,
+                        "tokenDecimals": 12,
+                        "tokenSymbol": "KSM"
+                    },
+                    "id": 1
+                }
+            elif method == 'system_chain':
+                return {
+                    "jsonrpc": "2.0",
+                    "result": "Ethereum",
+                    "id": 1
+                }
+            elif method == 'system_version':
+                return {
+                    "jsonrpc": "2.0",
+                    "result": "substrate-node",
+                    "id": 1,
+                }
 
             raise ValueError(f"Unsupported mocked method {method}")
 

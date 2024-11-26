@@ -17,7 +17,7 @@ import asyncio
 from substrateinterface import SubstrateInterface
 
 
-def subscription_handler(storage_key, updated_obj, update_nr, subscription_id):
+async def subscription_handler(storage_key, updated_obj, update_nr, subscription_id):
     print(f"Update for {storage_key}: {updated_obj.value}")
 
 

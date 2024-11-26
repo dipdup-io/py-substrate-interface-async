@@ -88,7 +88,7 @@ class RuntimeCallTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_unknown_runtime_call(self):
         with self.assertRaises(ValueError):
-            self.substrate.runtime_call("Foo", "bar")
+            await self.substrate.runtime_call("Foo", "bar")
 
 
 if __name__ == '__main__':

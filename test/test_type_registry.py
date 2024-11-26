@@ -191,6 +191,7 @@ class AutodetectAddressTypeTestCase(unittest.IsolatedAsyncioTestCase):
         substrate = SubstrateInterface(
             url=settings.POLKADOT_NODE_URL, auto_discover=False
         )
+        await substrate.init_props()
 
         keypair_alice = Keypair.create_from_uri('//Alice', ss58_format=substrate.ss58_format)
 

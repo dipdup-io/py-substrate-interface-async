@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 from scalecodec.types import GenericAccountId  # type: ignore[import-untyped]
 
@@ -38,7 +38,7 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
 
         orig_rpc_request = cls.kusama_substrate.rpc_request
 
-        def mocked_request(method, params):
+        async def mocked_request(method, params):
             if method == 'state_getKeysPaged':
                 if params[3] == '0x2e8047826d028f5cc092f5e694860efbd4f74ee1535424cdf3626a175867db62':
 
@@ -60,9 +60,9 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
                             ],
                             'id': 8
                         }
-            return orig_rpc_request(method, params)
+            return await orig_rpc_request(method, params)
 
-        cls.kusama_substrate.rpc_request = MagicMock(side_effect=mocked_request)
+        cls.kusama_substrate.rpc_request = AsyncMock(side_effect=mocked_request)
 
     async def test_claims_claim_map(self):
 
@@ -85,7 +85,7 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
             block_hash="0x587a1e69871c09f2408d724ceebbe16edc4a69139b5df9786e1057c4d041af73"
         )
 
-        record_1_1 = next(result)
+        record_1_1 = await result.__anext__()
 
         self.assertEqual(type(record_1_1[0]), GenericAccountId)
         self.assertIn('data', record_1_1[1].value)
@@ -93,7 +93,7 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
 
         # Next record set must trigger RPC call
 
-        record_1_2 = next(result)
+        record_1_2 = await result.__anext__()
 
         self.assertEqual(type(record_1_2[0]), GenericAccountId)
         self.assertIn('data', record_1_2[1].value)
@@ -106,8 +106,8 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
             block_hash="0x587a1e69871c09f2408d724ceebbe16edc4a69139b5df9786e1057c4d041af73"
         )
 
-        record_2_1 = next(result)
-        record_2_2 = next(result)
+        record_2_1 = await result.__anext__()
+        record_2_2 = await result.__anext__()
 
         self.assertEqual(record_1_1[0].value, record_2_1[0].value)
         self.assertEqual(record_1_1[1].value, record_2_1[1].value)
@@ -119,7 +119,7 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
 
         # Keep iterating shouldn't trigger retrieve next page
         result_count = 0
-        for _ in result:
+        async for _ in result:
             result_count += 1
 
         self.assertEqual(5, result_count)
@@ -128,7 +128,7 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
 
         # Keep iterating shouldn't exceed max_results
         result_count = 0
-        for record in result:
+        async for record in result:
             result_count += 1
             if result_count == 1:
                 self.assertEqual('0x00000a9c44f24e314127af63ae55b864a28d7aee', record[0].value)
@@ -196,7 +196,9 @@ class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):
             block_hash="0x61dd66907df3187fd1438463f2c87f0d596797936e0a292f6f98d12841da2325"
         )
 
-        records = list(era_stakers)
+        records = []
+        async for i in era_stakers:
+            records.append(i)
 
         self.assertEqual(len(records), 4)
         self.assertEqual(records[0][0].ss58_address, 'JCghFN7mD4ETKzMbvSVmMMPwWutJGk6Bm1yKWk8Z9KhPGeZ')

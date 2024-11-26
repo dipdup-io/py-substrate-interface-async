@@ -11,7 +11,7 @@ is returned. This value will be returned as a result of the query and finally au
 updates.
 
 ```python
-def subscription_handler(account_info_obj, update_nr, subscription_id):
+async def subscription_handler(account_info_obj, update_nr, subscription_id):
 
     if update_nr == 0:
         print('Initial account data:', account_info_obj.value)
@@ -41,7 +41,7 @@ a final value is returned. This value will be returned as a result of subscripti
 unsubscribed from further updates.
 
 ```python
-def subscription_handler(storage_key, updated_obj, update_nr, subscription_id):
+async def subscription_handler(storage_key, updated_obj, update_nr, subscription_id):
     print(f"Update for {storage_key.params[0]}: {updated_obj.value}")
 
 # Accounts to track

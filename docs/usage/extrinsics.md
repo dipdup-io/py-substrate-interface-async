@@ -55,7 +55,7 @@ print(receipt.error_message['name']) # 'LiquidityRestrictions'
 
 ```python
 
-receipt = substrate.retrieve_extrinsic_by_identifier("5233297-1")
+receipt = await substrate.retrieve_extrinsic_by_identifier("5233297-1")
 
 print(receipt.is_success) # False
 print(receipt.extrinsic.call_module.name) # 'Identity'
