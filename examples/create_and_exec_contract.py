@@ -37,7 +37,7 @@ async def main():
         print(f'Found contract on chain: {contract_info.value}')
 
         # Create contract instance from deterministic address
-        contract = ContractInstance.create_from_address(
+        contract = await ContractInstance.create_from_address(
             contract_address=contract_address,
             metadata_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper-v5.json'),
             substrate=substrate
@@ -45,7 +45,7 @@ async def main():
     else:
 
         # Upload WASM code
-        code = ContractCode.create_from_contract_files(
+        code = await ContractCode.create_from_contract_files(
             metadata_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper-v5.json'),
             wasm_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper-v5.wasm'),
             substrate=substrate
@@ -53,7 +53,7 @@ async def main():
 
         # Deploy contract
         print('Deploy contract...')
-        contract = code.deploy(
+        contract = await code.deploy(
             keypair=keypair,
             constructor="new",
             args={'init_value': True},
@@ -65,18 +65,18 @@ async def main():
         print(f'✅ Deployed @ {contract.contract_address}')
 
     # Read current value
-    result = contract.read(keypair, 'get')
+    result = await contract.read(keypair, 'get')
     print('Current value of "get":', result.contract_result_data)
 
     # Do a gas estimation of the message
-    gas_predit_result = contract.read(keypair, 'flip')
+    gas_predit_result = await contract.read(keypair, 'flip')
 
     print('Result of dry-run: ', gas_predit_result.value)
     print('Gas estimate: ', gas_predit_result.gas_required)
 
     # Do the actual call
     print('Executing contract call...')
-    contract_receipt = contract.exec(keypair, 'flip', args={
+    contract_receipt = await contract.exec(keypair, 'flip', args={
 
     }, gas_limit=gas_predit_result.gas_required)
 

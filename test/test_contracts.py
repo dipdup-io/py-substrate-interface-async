@@ -30,8 +30,8 @@ class ContractMetadataTestCase(unittest.IsolatedAsyncioTestCase):
     def setUpClass(cls):
         cls.substrate = SubstrateInterface(url=settings.KUSAMA_NODE_URL)
 
-    def setUp(self) -> None:
-        self.contract_metadata = ContractMetadata.create_from_file(
+    async def asyncSetUp(self) -> None:
+        self.contract_metadata = await ContractMetadata.create_from_file(
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'erc20-v0.json'),
             substrate=self.substrate
         )
@@ -41,7 +41,7 @@ class ContractMetadataTestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_incorrect_metadata_file(self):
         with self.assertRaises(ContractMetadataParseException):
-            ContractMetadata.create_from_file(
+            await ContractMetadata.create_from_file(
                 metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'incorrect_metadata.json'),
                 substrate=self.substrate
             )
@@ -142,15 +142,15 @@ class ContractMetadataTestCase(unittest.IsolatedAsyncioTestCase):
     async def test_unsupported_ink_env_type_handling(self):
         with self.assertRaises(NotImplementedError):
 
-            ContractMetadata.create_from_file(
+            await ContractMetadata.create_from_file(
                 metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'unsupported_type_metadata.json'),
                 substrate=self.substrate
             )
 
 
 class ContractMetadataV1TestCase(ContractMetadataTestCase):
-    def setUp(self) -> None:
-        self.contract_metadata = ContractMetadata.create_from_file(
+    async def asyncSetUp(self) -> None:
+        self.contract_metadata = await ContractMetadata.create_from_file(
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'erc20-v1.json'),
             substrate=self.substrate
         )
@@ -160,7 +160,7 @@ class ContractMetadataV1TestCase(ContractMetadataTestCase):
 
     async def test_incorrect_metadata_file(self):
         with self.assertRaises(ContractMetadataParseException):
-            ContractMetadata.create_from_file(
+            await ContractMetadata.create_from_file(
                 metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'incorrect_metadata.json'),
                 substrate=self.substrate
             )
@@ -271,15 +271,15 @@ class ContractMetadataV1TestCase(ContractMetadataTestCase):
     async def test_unsupported_ink_env_type_handling(self):
         with self.assertRaises(NotImplementedError):
 
-            ContractMetadata.create_from_file(
+            await ContractMetadata.create_from_file(
                 metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'unsupported_type_metadata.json'),
                 substrate=self.substrate
             )
 
 
 class ContractMetadataV3TestCase(ContractMetadataV1TestCase):
-    def setUp(self) -> None:
-        self.contract_metadata = ContractMetadata.create_from_file(
+    async def asyncSetUp(self) -> None:
+        self.contract_metadata = await ContractMetadata.create_from_file(
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'erc20-v3.json'),
             substrate=self.substrate
         )
@@ -292,8 +292,8 @@ class FlipperMetadataV3TestCase(unittest.IsolatedAsyncioTestCase):
     def setUpClass(cls):
         cls.substrate = SubstrateInterface(url=settings.KUSAMA_NODE_URL)
 
-    def setUp(self) -> None:
-        self.contract_metadata = ContractMetadata.create_from_file(
+    async def asyncSetUp(self) -> None:
+        self.contract_metadata = await ContractMetadata.create_from_file(
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'flipper-v3.json'),
             substrate=self.substrate
         )
@@ -303,7 +303,7 @@ class FlipperMetadataV3TestCase(unittest.IsolatedAsyncioTestCase):
 
     async def test_incorrect_metadata_file(self):
         with self.assertRaises(ContractMetadataParseException):
-            ContractMetadata.create_from_file(
+            await ContractMetadata.create_from_file(
                 metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'incorrect_metadata.json'),
                 substrate=self.substrate
             )
@@ -383,8 +383,8 @@ class FlipperInstanceTestCase(unittest.IsolatedAsyncioTestCase):
 
         cls.keypair = Keypair.create_from_uri('//Alice')
 
-    def setUp(self) -> None:
-        self.contract = ContractInstance.create_from_address(
+    async def asyncSetUp(self) -> None:
+        self.contract = await ContractInstance.create_from_address(
             contract_address="5GhwarrVMH8kjb8XyW6zCfURHbHy3v84afzLbADyYYX6H2Kk",
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'flipper-v3.json'),
             substrate=self.substrate
@@ -404,8 +404,8 @@ class FlipperInstanceTestCase(unittest.IsolatedAsyncioTestCase):
 
 
 class FlipperInstanceV4TestCase(FlipperInstanceTestCase):
-    def setUp(self) -> None:
-        self.contract = ContractInstance.create_from_address(
+    async def asyncSetUp(self) -> None:
+        self.contract = await ContractInstance.create_from_address(
             contract_address="5DaohteAvvR9PZEhynqWvbFT8HEaHNuiiPTZV61VEUHnqsfU",
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'flipper-v4.json'),
             substrate=self.substrate
@@ -419,7 +419,7 @@ class FlipperInstanceV5TestCase(FlipperInstanceTestCase):
 
         class MockedSubstrateInterface(SubstrateInterface):
 
-            def rpc_request(self, method, params, result_handler=None):
+            async def rpc_request(self, method, params, result_handler=None):
                 if method == 'state_call':
                     return {
                         'jsonrpc': '2.0',
@@ -438,7 +438,7 @@ class FlipperInstanceV5TestCase(FlipperInstanceTestCase):
                         },
                         'id': self.request_id}
 
-                return super().rpc_request(method, params, result_handler)
+                return await super().rpc_request(method, params, result_handler)
 
         cls.substrate = MockedSubstrateInterface(
             url=settings.KUSAMA_NODE_URL, type_registry_preset='canvas', type_registry={'types': {"ContractExecResult": "ContractExecResultTo269"}}
@@ -446,12 +446,13 @@ class FlipperInstanceV5TestCase(FlipperInstanceTestCase):
 
         cls.keypair = Keypair.create_from_uri('//Alice')
 
-    def setUp(self) -> None:
-        self.contract = ContractInstance.create_from_address(
+    async def asyncSetUp(self) -> None:
+        self.contract = await ContractInstance.create_from_address(
             contract_address="5DaohteAvvR9PZEhynqWvbFT8HEaHNuiiPTZV61VEUHnqsfU",
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'flipper-v5.json'),
             substrate=self.substrate
         )
+        await self.contract.init()
 
     async def test_instance_read(self):
 

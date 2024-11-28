@@ -174,7 +174,7 @@ if contract_info.value:
     print(f'Found contract on chain: {contract_info.value}')
 
     # Create contract instance from deterministic address
-    contract = ContractInstance.create_from_address(
+    contract = await ContractInstance.create_from_address(
         contract_address=contract_address,
         metadata_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper.json'),
         substrate=substrate
@@ -182,7 +182,7 @@ if contract_info.value:
 else:
 
     # Upload WASM code
-    code = ContractCode.create_from_contract_files(
+    code = await ContractCode.create_from_contract_files(
         metadata_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper.json'),
         wasm_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper.wasm'),
         substrate=substrate

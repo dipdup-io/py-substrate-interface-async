@@ -110,7 +110,7 @@ class TestInit(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(RemainingScaleBytesNotEmptyException):
             await self.kusama_substrate.decode_scale('u8', ScaleBytes('0x0101'))
 
-        with SubstrateInterface(url=settings.KUSAMA_NODE_URL, config={'strict_scale_decode': False}) as substrate:
+        async with SubstrateInterface(url=settings.KUSAMA_NODE_URL, config={'strict_scale_decode': False}) as substrate:
             result = await substrate.decode_scale('u8', ScaleBytes('0x0101'))
             self.assertEqual(result, 1)
 
