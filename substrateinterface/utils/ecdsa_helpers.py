@@ -18,21 +18,21 @@ import hashlib
 import hmac
 import struct
 
-from ecdsa.curves import SECP256k1
-from eth_keys.datatypes import Signature, PrivateKey
-from eth_utils import to_checksum_address, keccak as eth_utils_keccak
+from substrateinterface.utils import wrap_import
 
 BIP39_PBKDF2_ROUNDS = 2048
 BIP39_SALT_MODIFIER = "mnemonic"
 BIP32_PRIVDEV = 0x80000000
-BIP32_CURVE = SECP256k1
 BIP32_SEED_MODIFIER = b'Bitcoin seed'
 ETH_DERIVATION_PATH = "m/44'/60'/0'/0"
 
 
 class PublicKey:
     def __init__(self, private_key):
-        self.point = int.from_bytes(private_key, byteorder='big') * BIP32_CURVE.generator
+        with wrap_import():
+            from ecdsa.curves import SECP256k1  # type: ignore[import-untyped]
+
+        self.point = int.from_bytes(private_key, byteorder='big') * SECP256k1.generator
 
     def __bytes__(self):
         xstr = int(self.point.x()).to_bytes(32, byteorder='big')
@@ -40,10 +40,13 @@ class PublicKey:
         return (2 + parity).to_bytes(1, byteorder='big') + xstr
 
     def address(self):
+        with wrap_import():
+            from eth_utils import to_checksum_address, keccak
+            
         x = int(self.point.x())
         y = int(self.point.y())
         s = x.to_bytes(32, 'big') + y.to_bytes(32, 'big')
-        return to_checksum_address(eth_utils_keccak(s)[12:])
+        return to_checksum_address(keccak(s)[12:])
 
 
 def mnemonic_to_bip39seed(mnemonic, passphrase):
@@ -59,6 +62,9 @@ def bip39seed_to_bip32masternode(seed):
 
 
 def derive_bip32childkey(parent_key, parent_chain_code, i):
+    with wrap_import():
+        from ecdsa.curves import SECP256k1
+
     assert len(parent_key) == 32
     assert len(parent_chain_code) == 32
     k = parent_chain_code
@@ -72,8 +78,8 @@ def derive_bip32childkey(parent_key, parent_chain_code, i):
         key, chain_code = h[:32], h[32:]
         a = int.from_bytes(key, byteorder='big')
         b = int.from_bytes(parent_key, byteorder='big')
-        key = (a + b) % int(BIP32_CURVE.order)
-        if a < BIP32_CURVE.order and key != 0:
+        key = (a + b) % int(SECP256k1.order)
+        if a < SECP256k1.order and key != 0:
             key = key.to_bytes(32, byteorder='big')
             break
         d = b'\x01' + h[32:] + struct.pack('>L', i)
@@ -92,7 +98,7 @@ def parse_derivation_path(str_derivation_path):
     return path
 
 
-def mnemonic_to_ecdsa_private_key(mnemonic: str, str_derivation_path: str = None, passphrase: str = "") -> bytes:
+def mnemonic_to_ecdsa_private_key(mnemonic: str, str_derivation_path: str | None = None, passphrase: str = "") -> bytes:
 
     if str_derivation_path is None:
         str_derivation_path = f'{ETH_DERIVATION_PATH}/0'
@@ -107,11 +113,17 @@ def mnemonic_to_ecdsa_private_key(mnemonic: str, str_derivation_path: str = None
 
 
 def ecdsa_sign(private_key: bytes, message: bytes) -> bytes:
+    with wrap_import():
+        from eth_keys.datatypes import PrivateKey
+
     signer = PrivateKey(private_key)
     return signer.sign_msg(message).to_bytes()
 
 
 def ecdsa_verify(signature: bytes, data: bytes, address: bytes) -> bool:
+    with wrap_import():
+        from eth_keys.datatypes import Signature
+
     signature_obj = Signature(signature)
     recovered_pubkey = signature_obj.recover_public_key_from_msg(data)
     return recovered_pubkey.to_canonical_address() == address

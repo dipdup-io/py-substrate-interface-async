@@ -20,7 +20,7 @@ from substrateinterface import SubstrateInterface
 from test import settings
 
 
-class SubscriptionsTestCase(unittest.TestCase):
+class SubscriptionsTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -28,42 +28,42 @@ class SubscriptionsTestCase(unittest.TestCase):
             url=settings.POLKADOT_NODE_URL
         )
 
-    def test_query_subscription(self):
+    async def test_query_subscription(self):
 
-        def subscription_handler(obj, update_nr, subscription_id):
+        async def subscription_handler(obj, update_nr, subscription_id):
 
             return {'update_nr': update_nr, 'subscription_id': subscription_id}
 
-        result = self.substrate.query("System", "Events", [], subscription_handler=subscription_handler)
+        result = await self.substrate.query("System", "Events", [], subscription_handler=subscription_handler)
 
         self.assertIsNotNone(result['subscription_id'])
 
-    def test_subscribe_storage_multi(self):
+    async def test_subscribe_storage_multi(self):
 
-        def subscription_handler(storage_key, updated_obj, update_nr, subscription_id):
+        async def subscription_handler(storage_key, updated_obj, update_nr, subscription_id):
             return {'update_nr': update_nr, 'subscription_id': subscription_id}
 
         storage_keys = [
-            self.substrate.create_storage_key(
+            await self.substrate.create_storage_key(
                 "System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"]
             ),
-            self.substrate.create_storage_key(
+            await self.substrate.create_storage_key(
                 "System", "Account", ["5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"]
             )
         ]
 
-        result = self.substrate.subscribe_storage(
+        result = await self.substrate.subscribe_storage(
             storage_keys=storage_keys, subscription_handler=subscription_handler
         )
 
         self.assertIsNotNone(result['subscription_id'])
 
-    def test_subscribe_new_heads(self):
+    async def test_subscribe_new_heads(self):
 
-        def block_subscription_handler(obj, update_nr, subscription_id):
+        async def block_subscription_handler(obj, update_nr, subscription_id):
             return obj['header']['number']
 
-        result = self.substrate.subscribe_block_headers(block_subscription_handler, finalized_only=True)
+        result = await self.substrate.subscribe_block_headers(block_subscription_handler, finalized_only=True)
 
         self.assertGreater(result, 0)
 

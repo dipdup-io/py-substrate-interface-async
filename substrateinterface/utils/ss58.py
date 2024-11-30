@@ -21,8 +21,8 @@
     https://github.com/paritytech/substrate/wiki/External-Address-Format-(SS58)
 
 """
-from scalecodec.utils.ss58 import ss58_decode, ss58_encode, ss58_decode_account_index, ss58_encode_account_index, \
-    is_valid_ss58_address, get_ss58_format
+from scalecodec.utils.ss58 import ss58_decode, ss58_encode, ss58_decode_account_index  # type: ignore[import-untyped]
+from scalecodec.utils.ss58 import ss58_encode_account_index, is_valid_ss58_address, get_ss58_format  # type: ignore[import-untyped]
 
 
 ss58_decode = ss58_decode

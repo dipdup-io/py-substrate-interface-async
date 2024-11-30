@@ -11,7 +11,7 @@ is returned. This value will be returned as a result of the query and finally au
 updates.
 
 ```python
-def subscription_handler(account_info_obj, update_nr, subscription_id):
+async def subscription_handler(account_info_obj, update_nr, subscription_id):
 
     if update_nr == 0:
         print('Initial account data:', account_info_obj.value)
@@ -25,7 +25,7 @@ def subscription_handler(account_info_obj, update_nr, subscription_id):
         return account_info_obj
 
 
-result = substrate.query("System", "Account", ["5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"],
+result = await substrate.query("System", "Account", ["5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"],
                          subscription_handler=subscription_handler)
 
 print(result)
@@ -41,15 +41,15 @@ a final value is returned. This value will be returned as a result of subscripti
 unsubscribed from further updates.
 
 ```python
-def subscription_handler(storage_key, updated_obj, update_nr, subscription_id):
+async def subscription_handler(storage_key, updated_obj, update_nr, subscription_id):
     print(f"Update for {storage_key.params[0]}: {updated_obj.value}")
 
 # Accounts to track
 storage_keys = [
-    substrate.create_storage_key(
+    await substrate.create_storage_key(
         "System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"]
     ),
-    substrate.create_storage_key(
+    await substrate.create_storage_key(
         "System", "Account", ["5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"]
     )
 ]
@@ -62,10 +62,10 @@ result = substrate.subscribe_storage(
 ## Subscribe to new block headers
 
 ```python
-def subscription_handler(obj, update_nr, subscription_id):
+async def subscription_handler(obj, update_nr, subscription_id):
     print(f"New block #{obj['header']['number']}")
 
-    block = substrate.get_block(block_number=obj['header']['number'])
+    block = await substrate.get_block(block_number=obj['header']['number'])
 
     for idx, extrinsic in enumerate(block['extrinsics']):
         print(f'# {idx}:  {extrinsic.value}')

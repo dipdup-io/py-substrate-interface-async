@@ -10,7 +10,7 @@ substrate = SubstrateInterface(
 
 keypair = Keypair.create_from_uri('//Alice')
 
-balance_call = substrate.compose_call(
+balance_call = await substrate.compose_call(
     call_module='Balances',
     call_function='transfer_keep_alive',
     call_params={
@@ -19,7 +19,7 @@ balance_call = substrate.compose_call(
     }
 )
 
-call = substrate.compose_call(
+call = await substrate.compose_call(
     call_module='Utility',
     call_function='batch',
     call_params={
@@ -27,7 +27,7 @@ call = substrate.compose_call(
     }
 )
 
-extrinsic = substrate.create_signed_extrinsic(
+extrinsic = await substrate.create_signed_extrinsic(
     call=call,
     keypair=keypair,
     era={'period': 64}
@@ -35,7 +35,7 @@ extrinsic = substrate.create_signed_extrinsic(
 
 
 try:
-    receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+    receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
     print('Extrinsic "{}" included in block "{}"'.format(
         receipt.extrinsic_hash, receipt.block_hash
@@ -44,7 +44,7 @@ try:
     if receipt.is_success:
 
         print('✅ Success, triggered events:')
-        for event in receipt.triggered_events:
+        for event in (await receipt.triggered_events()):
             print(f'* {event.value}')
 
     else:
@@ -71,7 +71,7 @@ substrate = SubstrateInterface(
 
 keypair = Keypair.create_from_uri('//Alice')
 
-call = substrate.compose_call(
+call = await substrate.compose_call(
     call_module='Balances',
     call_function='transfer_keep_alive',
     call_params={
@@ -95,7 +95,7 @@ substrate = SubstrateInterface(
     url="ws://127.0.0.1:9944"
 )
 
-result = substrate.query_map("System", "Account", max_results=100)
+result = await substrate.query_map("System", "Account", max_results=100)
 
 for account, account_info in result:
     print(f'* {account.value}: {account_info.value}')
@@ -122,7 +122,7 @@ multisig_account = substrate.generate_multisig_account(
     threshold=2
 )
 
-call = substrate.compose_call(
+call = await substrate.compose_call(
     call_module='Balances',
     call_function='transfer_keep_alive',
     call_params={
@@ -132,18 +132,18 @@ call = substrate.compose_call(
 )
 
 # Initiate multisig tx
-extrinsic = substrate.create_multisig_extrinsic(call, keypair_alice, multisig_account, era={'period': 64})
+extrinsic = await substrate.create_multisig_extrinsic(call, keypair_alice, multisig_account, era={'period': 64})
 
-receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
 if not receipt.is_success:
     print(f"⚠️ {receipt.error_message}")
     exit()
 
 # Finalize multisig tx with other signatory
-extrinsic = substrate.create_multisig_extrinsic(call, keypair_bob, multisig_account, era={'period': 64})
+extrinsic = await substrate.create_multisig_extrinsic(call, keypair_bob, multisig_account, era={'period': 64})
 
-receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
 if receipt.is_success:
     print(f"✅ {receipt.triggered_events}")
@@ -167,14 +167,14 @@ keypair = Keypair.create_from_uri('//Alice')
 contract_address = "5GhwarrVMH8kjb8XyW6zCfURHbHy3v84afzLbADyYYX6H2Kk"
 
 # Check if contract is on chain
-contract_info = substrate.query("Contracts", "ContractInfoOf", [contract_address])
+contract_info = await substrate.query("Contracts", "ContractInfoOf", [contract_address])
 
 if contract_info.value:
 
     print(f'Found contract on chain: {contract_info.value}')
 
     # Create contract instance from deterministic address
-    contract = ContractInstance.create_from_address(
+    contract = await ContractInstance.create_from_address(
         contract_address=contract_address,
         metadata_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper.json'),
         substrate=substrate
@@ -182,7 +182,7 @@ if contract_info.value:
 else:
 
     # Upload WASM code
-    code = ContractCode.create_from_contract_files(
+    code = await ContractCode.create_from_contract_files(
         metadata_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper.json'),
         wasm_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper.wasm'),
         substrate=substrate
@@ -236,9 +236,9 @@ from substrateinterface import SubstrateInterface
 substrate = SubstrateInterface(url="ws://127.0.0.1:9944")
 
 block_number = 10
-block_hash = substrate.get_block_hash(block_number)
+block_hash = await substrate.get_block_hash(block_number)
 
-result = substrate.query(
+result = await substrate.query(
     "System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"], block_hash=block_hash
 )
 
@@ -261,10 +261,10 @@ from substrateinterface import SubstrateInterface
 substrate = SubstrateInterface(url="ws://127.0.0.1:9944")
 
 
-def subscription_handler(obj, update_nr, subscription_id):
+async def subscription_handler(obj, update_nr, subscription_id):
     print(f"New block #{obj['header']['number']}")
 
-    block = substrate.get_block(block_number=obj['header']['number'])
+    block = await substrate.get_block(block_number=obj['header']['number'])
 
     for idx, extrinsic in enumerate(block['extrinsics']):
         print(f'# {idx}:  {extrinsic.value}')
@@ -287,7 +287,7 @@ substrate = SubstrateInterface(
 )
 
 
-def subscription_handler(account_info_obj, update_nr, subscription_id):
+async def subscription_handler(account_info_obj, update_nr, subscription_id):
 
     if update_nr == 0:
         print('Initial account data:', account_info_obj.value)
@@ -301,7 +301,7 @@ def subscription_handler(account_info_obj, update_nr, subscription_id):
         return account_info_obj
 
 
-result = substrate.query("System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"],
+result = await substrate.query("System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"],
                          subscription_handler=subscription_handler)
 
 print(result)
@@ -313,7 +313,7 @@ print(result)
 from substrateinterface import SubstrateInterface
 
 
-def subscription_handler(storage_key, updated_obj, update_nr, subscription_id):
+async def subscription_handler(storage_key, updated_obj, update_nr, subscription_id):
     print(f"Update for {storage_key.params[0]}: {updated_obj.value}")
 
 
@@ -321,10 +321,10 @@ substrate = SubstrateInterface(url="ws://127.0.0.1:9944")
 
 # Accounts to track
 storage_keys = [
-    substrate.create_storage_key(
+    await substrate.create_storage_key(
         "System", "Account", ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"]
     ),
-    substrate.create_storage_key(
+    await substrate.create_storage_key(
         "System", "Account", ["5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"]
     )
 ]

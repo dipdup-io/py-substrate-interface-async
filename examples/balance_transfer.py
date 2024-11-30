@@ -14,55 +14,60 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 from substrateinterface import SubstrateInterface, Keypair
 from substrateinterface.exceptions import SubstrateRequestException
 
 # import logging
 # logging.basicConfig(level=logging.DEBUG)
 
-substrate = SubstrateInterface(
-    url="ws://127.0.0.1:9944"
-)
+async def main():
+    substrate = SubstrateInterface(
+        url="ws://127.0.0.1:9944"
+    )
 
-substrate = SubstrateInterface(url="ws://127.0.0.1:9944")
-keypair_alice = Keypair.create_from_uri('//Alice', ss58_format=substrate.ss58_format)
-print(keypair_alice.ss58_address)
+    substrate = SubstrateInterface(url="ws://127.0.0.1:9944")
+    keypair_alice = Keypair.create_from_uri('//Alice', ss58_format=substrate.ss58_format)
+    print(keypair_alice.ss58_address)
 
-keypair = Keypair.create_from_uri('//Alice')
+    keypair = Keypair.create_from_uri('//Alice')
 
-call = substrate.compose_call(
-    call_module='Balances',
-    call_function='transfer_keep_alive',
-    call_params={
-        'dest': '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
-        'value': 1 * 10**15
-    }
-)
+    call = await substrate.compose_call(
+        call_module='Balances',
+        call_function='transfer_keep_alive',
+        call_params={
+            'dest': '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+            'value': 1 * 10**15
+        }
+    )
 
-print(call.data.to_hex())
+    print(call.data.to_hex())
 
-extrinsic = substrate.create_signed_extrinsic(
-    call=call,
-    keypair=keypair,
-    era={'period': 64}
-)
+    extrinsic = await substrate.create_signed_extrinsic(
+        call=call,
+        keypair=keypair,
+        era={'period': 64}
+    )
 
-try:
-    receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+    try:
+        receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
-    print('Extrinsic "{}" included in block "{}"'.format(
-        receipt.extrinsic_hash, receipt.block_hash
-    ))
+        print('Extrinsic "{}" included in block "{}"'.format(
+            receipt.extrinsic_hash, receipt.block_hash
+        ))
 
-    if receipt.is_success:
+        if receipt.is_success:
 
-        print('✅ Success, triggered events:')
-        for event in receipt.triggered_events:
-            print(f'* {event.value}')
+            print('✅ Success, triggered events:')
+            for event in (await receipt.triggered_events()):
+                print(f'* {event.value}')
 
-    else:
-        print('⚠️ Extrinsic Failed: ', receipt.error_message)
+        else:
+            print('⚠️ Extrinsic Failed: ', receipt.error_message)
 
 
-except SubstrateRequestException as e:
-    print("Failed to send: {}".format(e))
+    except SubstrateRequestException as e:
+        print("Failed to send: {}".format(e))
+
+if __name__ == "__main__":
+    asyncio.run(main())

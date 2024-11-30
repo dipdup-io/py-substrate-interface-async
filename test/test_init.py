@@ -16,24 +16,28 @@
 
 import unittest
 
-from scalecodec import ScaleBytes
-from scalecodec.exceptions import RemainingScaleBytesNotEmptyException
+from scalecodec import ScaleBytes  # type: ignore[import-untyped]
+from scalecodec.exceptions import RemainingScaleBytesNotEmptyException  # type: ignore[import-untyped]
 from substrateinterface import SubstrateInterface
 from test import settings
 
 
-class TestInit(unittest.TestCase):
+class TestInit(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.kusama_substrate = SubstrateInterface(url=settings.KUSAMA_NODE_URL)
         cls.polkadot_substrate = SubstrateInterface(url=settings.POLKADOT_NODE_URL)
 
-    def test_chain(self):
+    async def asyncSetUp(self):
+        await self.kusama_substrate.init_props()
+        await self.polkadot_substrate.init_props()
+
+    async def test_chain(self):
         self.assertEqual('Kusama', self.kusama_substrate.chain)
         self.assertEqual('Polkadot', self.polkadot_substrate.chain)
 
-    def test_properties(self):
+    async def test_properties(self):
         self.assertDictEqual(
             {'ss58Format': 2, 'tokenDecimals': 12, 'tokenSymbol': 'KSM'}, self.kusama_substrate.properties
         )
@@ -41,38 +45,38 @@ class TestInit(unittest.TestCase):
             {'ss58Format': 0, 'tokenDecimals': 10, 'tokenSymbol': 'DOT'}, self.polkadot_substrate.properties
         )
 
-    def test_ss58_format(self):
+    async def test_ss58_format(self):
         self.assertEqual(2, self.kusama_substrate.ss58_format)
         self.assertEqual(0, self.polkadot_substrate.ss58_format)
 
-    def test_token_symbol(self):
+    async def test_token_symbol(self):
         self.assertEqual('KSM', self.kusama_substrate.token_symbol)
         self.assertEqual('DOT', self.polkadot_substrate.token_symbol)
 
-    def test_token_decimals(self):
+    async def test_token_decimals(self):
         self.assertEqual(12, self.kusama_substrate.token_decimals)
         self.assertEqual(10, self.polkadot_substrate.token_decimals)
 
-    def test_override_ss58_format_init(self):
+    async def test_override_ss58_format_init(self):
         substrate = SubstrateInterface(url=settings.KUSAMA_NODE_URL, ss58_format=99)
         self.assertEqual(99, substrate.ss58_format)
 
-    def test_override_incorrect_ss58_format(self):
+    async def test_override_incorrect_ss58_format(self):
         substrate = SubstrateInterface(url=settings.KUSAMA_NODE_URL)
         with self.assertRaises(TypeError):
             substrate.ss58_format = 'test'
 
-    def test_override_token_symbol(self):
+    async def test_override_token_symbol(self):
         substrate = SubstrateInterface(url=settings.KUSAMA_NODE_URL)
         substrate.token_symbol = 'TST'
         self.assertEqual('TST', substrate.token_symbol)
 
-    def test_override_incorrect_token_decimals(self):
+    async def test_override_incorrect_token_decimals(self):
         substrate = SubstrateInterface(url=settings.KUSAMA_NODE_URL)
         with self.assertRaises(TypeError):
             substrate.token_decimals = 'test'
 
-    def test_is_valid_ss58_address(self):
+    async def test_is_valid_ss58_address(self):
         self.assertTrue(self.kusama_substrate.is_valid_ss58_address('GLdQ4D4wkeEJUX8DBT9HkpycFVYQZ3fmJyQ5ZgBRxZ4LD3S'))
         self.assertFalse(
             self.kusama_substrate.is_valid_ss58_address('12gX42C4Fj1wgtfgoP624zeHrcPBqzhb4yAENyvFdGX6EUnN')
@@ -86,28 +90,28 @@ class TestInit(unittest.TestCase):
             self.polkadot_substrate.is_valid_ss58_address('12gX42C4Fj1wgtfgoP624zeHrcPBqzhb4yAENyvFdGX6EUnN')
         )
 
-    def test_lru_cache_not_shared(self):
-        block_number = self.kusama_substrate.get_block_number("0xa4d873095aeae6fc1f3953f0a0085ee216bf8629342aaa92bd53f841e1052e1c")
-        block_number2 = self.polkadot_substrate.get_block_number(
+    async def test_lru_cache_not_shared(self):
+        block_number = await self.kusama_substrate.get_block_number("0xa4d873095aeae6fc1f3953f0a0085ee216bf8629342aaa92bd53f841e1052e1c")
+        block_number2 = await self.polkadot_substrate.get_block_number(
             "0xa4d873095aeae6fc1f3953f0a0085ee216bf8629342aaa92bd53f841e1052e1c")
 
         self.assertIsNotNone(block_number)
         self.assertIsNone(block_number2)
 
-    def test_context_manager(self):
-        with SubstrateInterface(url=settings.KUSAMA_NODE_URL) as substrate:
+    async def test_context_manager(self):
+        async with SubstrateInterface(url=settings.KUSAMA_NODE_URL) as substrate:
             self.assertTrue(substrate.websocket.connected)
             self.assertEqual(2, substrate.ss58_format)
 
         self.assertFalse(substrate.websocket.connected)
 
-    def test_strict_scale_decode(self):
+    async def test_strict_scale_decode(self):
 
         with self.assertRaises(RemainingScaleBytesNotEmptyException):
-            self.kusama_substrate.decode_scale('u8', ScaleBytes('0x0101'))
+            await self.kusama_substrate.decode_scale('u8', ScaleBytes('0x0101'))
 
-        with SubstrateInterface(url=settings.KUSAMA_NODE_URL, config={'strict_scale_decode': False}) as substrate:
-            result = substrate.decode_scale('u8', ScaleBytes('0x0101'))
+        async with SubstrateInterface(url=settings.KUSAMA_NODE_URL, config={'strict_scale_decode': False}) as substrate:
+            result = await substrate.decode_scale('u8', ScaleBytes('0x0101'))
             self.assertEqual(result, 1)
 
 

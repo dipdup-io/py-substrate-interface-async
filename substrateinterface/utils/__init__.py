@@ -13,6 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from contextlib import contextmanager
+from typing import Generator
 import re
 
 
@@ -32,3 +34,11 @@ def version_tuple(version_string: str) -> tuple:
         raise ValueError('version_string can only contain numeric characters')
 
     return tuple(int(v) for v in version_string.split('.'))
+
+
+@contextmanager
+def wrap_import() -> Generator[None, None, None]:
+    try:
+        yield
+    except ModuleNotFoundError as e:
+        raise ModuleNotFoundError(e.args[0] + ". Install the package with 'full' extra, e.g. `pip install substrate-interface-async[full]`") from e
