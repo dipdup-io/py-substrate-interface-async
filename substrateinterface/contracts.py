@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import os
 from hashlib import blake2b
 from typing import Any, Optional
+
+import orjson
 
 from .utils import version_tuple
 
@@ -68,7 +69,7 @@ class ContractMetadata:
         """
         with open(os.path.abspath(metadata_file), 'r') as fp:
             metadata_string = fp.read()
-        res = cls(json.loads(metadata_string), substrate)
+        res = cls(orjson.loads(metadata_string), substrate)
         await res.init()
         return res
 

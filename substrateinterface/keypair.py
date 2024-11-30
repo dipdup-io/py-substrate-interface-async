@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
+import orjson
 
 from scalecodec.utils.ss58 import ss58_encode, ss58_decode, get_ss58_format  # type: ignore[import-untyped]
 
@@ -394,7 +394,7 @@ class Keypair:
         """
 
         if type(json_data) is str:
-            json_data = json.loads(json_data)
+            json_data = orjson.loads(json_data)
 
         private_key, public_key = decode_pair_from_encrypted_json(json_data, passphrase)
 

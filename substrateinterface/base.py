@@ -22,7 +22,7 @@ import warnings
 from datetime import datetime
 from hashlib import blake2b
 
-import json
+import orjson
 import logging
 
 from aiohttp import ClientSession
@@ -289,7 +289,7 @@ class SubstrateInterface:
             "id": request_id
         }
         try:
-            self.websocket.send(json.dumps(payload))
+            self.websocket.send(orjson.dumps(payload))
         except WebSocketConnectionClosedException:
             if self.config.get('auto_reconnect') and self.url:
                 # Try to reconnect websocket and retry rpc_request
@@ -346,7 +346,7 @@ class SubstrateInterface:
 
             # Read one more message to queue
             if json_body is None:
-                self.__rpc_message_queue.append(json.loads(self.websocket.recv()))
+                self.__rpc_message_queue.append(orjson.loads(self.websocket.recv()))
 
         return json_body
 
@@ -357,7 +357,7 @@ class SubstrateInterface:
             "params": params,
             "id": self.next_request_id,
         }
-        async with self.session.request("POST", self.url, data=json.dumps(payload), headers=self.default_headers) as response:
+        async with self.session.request("POST", self.url, data=orjson.dumps(payload), headers=self.default_headers) as response:
             if response.status != 200:
                 raise SubstrateRequestException(
                     "RPC request failed with HTTP status code {}".format(response.status))

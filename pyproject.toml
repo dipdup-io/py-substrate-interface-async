@@ -28,6 +28,7 @@ dependencies = [
     "scalecodec>=1.2.11",
     "xxhash>=3.5.0",
     "websocket-client>=1.8.0",
+    "orjson>=3.10.12",
 ]
 
 [project.optional-dependencies]

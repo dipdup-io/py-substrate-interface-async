@@ -1,8 +1,9 @@
 import base64
-import json
 from os import urandom
 
 from typing import Union
+
+import orjson
 
 from substrateinterface.utils import wrap_import
 
@@ -34,7 +35,7 @@ def decode_pair_from_encrypted_json(json_data: Union[str, dict], passphrase: str
     tuple containing private and public key
     """
     if type(json_data) is str:
-        json_data = json.loads(json_data)
+        json_data = orjson.loads(json_data)
 
     # Check requirements
     if json_data.get('encoding', {}).get('version') != "3":  # type: ignore[union-attr]
