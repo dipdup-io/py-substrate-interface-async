@@ -79,14 +79,14 @@ dev = [
 # # extend-select = ["B", "C4", "FA", "G", "I", "PTH", "Q", "RET", "RUF", "TCH", "UP"]
 # extend-select = ["I", "Q"]
 # flake8-quotes = { inline-quotes = "single", multiline-quotes = "double" }
-# isort = { force-single-line = true, known-first-party = ["dipdup"] }
+# isort = { force-single-line = true, known-first-party = ["substrateinterface"] }
 
 # [tool.mypy]
 # python_version = "3.12"
 # strict = false
 
 [tool.pytest.ini_options]
-addopts="--cov-report=term-missing --cov=dipdup --cov-report=xml -s -v"
+addopts="--cov-report=term-missing --cov=substrateinterface --cov-report=xml -s -v"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 log_cli_level = "WARNING"

@@ -4,14 +4,7 @@ from os import urandom
 
 from typing import Union
 
-from substrateinterface.utils import CryptoExtraFallback
-try:
-    import nacl.hashlib
-    import nacl.secret
-    import sr25519  # type: ignore[import-untyped]
-except ImportError:
-    nacl = CryptoExtraFallback()  # type: ignore[assignment]
-    sr25519 = CryptoExtraFallback()
+from substrateinterface.utils import wrap_import
 
 NONCE_LENGTH = 24
 SCRYPT_LENGTH = 32 + (3 * 4)
@@ -50,6 +43,9 @@ def decode_pair_from_encrypted_json(json_data: Union[str, dict], passphrase: str
     encrypted = base64.b64decode(json_data['encoded'])  # type: ignore[index]
 
     if 'scrypt' in json_data['encoding']['type']:  # type: ignore[index]
+        with wrap_import():
+            import nacl.hashlib
+
         salt = encrypted[0:32]
         n = int.from_bytes(encrypted[32:36], byteorder='little')
         p = int.from_bytes(encrypted[36:40], byteorder='little')
@@ -64,6 +60,9 @@ def decode_pair_from_encrypted_json(json_data: Union[str, dict], passphrase: str
     if "xsalsa20-poly1305" not in json_data['encoding']['type']:  # type: ignore[index]
         raise ValueError("Unsupported encoding type")
 
+    with wrap_import():
+        import nacl.secret
+
     nonce = encrypted[0:NONCE_LENGTH]
     message = encrypted[NONCE_LENGTH:]
 
@@ -74,6 +73,9 @@ def decode_pair_from_encrypted_json(json_data: Union[str, dict], passphrase: str
     secret_key, public_key = decode_pkcs8(decrypted)
 
     if 'sr25519' in json_data['encoding']['content']:  # type: ignore[index]
+        with wrap_import():
+            import sr25519  # type: ignore[import-untyped]
+
         # Secret key from PolkadotJS is an Ed25519 expanded secret key, so has to be converted
         # https://github.com/polkadot-js/wasm/blob/master/packages/wasm-crypto/src/rs/sr25519.rs#L125
         converted_public_key, secret_key = sr25519.pair_from_ed25519_secret_key(secret_key)
@@ -124,6 +126,10 @@ def encode_pair(public_key: bytes, private_key: bytes, passphrase: str) -> bytes
     -------
     (Encrypted) PKCS#8 message bytes
     """
+    with wrap_import():
+        import nacl.hashlib
+        import nacl.secret
+
     message = encode_pkcs8(public_key, private_key)
 
     salt = urandom(SALT_LENGTH)

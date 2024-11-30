@@ -389,6 +389,7 @@ class FlipperInstanceTestCase(unittest.IsolatedAsyncioTestCase):
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'flipper-v3.json'),
             substrate=self.substrate
         )
+        await self.contract.init()
 
     async def test_instance_read(self):
 

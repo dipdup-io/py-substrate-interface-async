@@ -27,7 +27,7 @@ import re
 import secrets
 from base64 import b64encode
 
-from substrateinterface.utils import CryptoExtraFallback
+from substrateinterface.utils import wrap_import
 
 from .constants import DEV_PHRASE
 from .exceptions import ConfigurationError
@@ -35,19 +35,6 @@ from .key import extract_derive_path
 from .utils.ecdsa_helpers import mnemonic_to_ecdsa_private_key, ecdsa_verify, ecdsa_sign
 from .utils.encrypted_json import decode_pair_from_encrypted_json, encode_pair
 
-try:
-    import bip39.bip39 as bip39  # type: ignore[import-untyped]
-    import sr25519  # type: ignore[import-untyped]
-    import ed25519_zebra  # type: ignore[import-untyped]
-    import nacl.bindings
-    import nacl.public
-    import eth_keys.datatypes
-except ImportError:
-    bip39 = CryptoExtraFallback()
-    sr25519 = CryptoExtraFallback()
-    ed25519_zebra = CryptoExtraFallback()
-    nacl = CryptoExtraFallback()  # type: ignore[assignment]
-    eth_keys = CryptoExtraFallback()  # type: ignore[assignment]
 
 __all__ = ['Keypair', 'KeypairType', 'MnemonicLanguageCode']
 
@@ -125,9 +112,15 @@ class Keypair:
                 if len(private_key) != 64:
                     raise ValueError('Secret key should be 64 bytes long')
                 if not public_key:
+                    with wrap_import():
+                        import sr25519  # type: ignore[import-untyped]
+
                     public_key = sr25519.public_from_secret_key(private_key)
 
             if self.crypto_type == KeypairType.ECDSA:
+                with wrap_import():
+                    import eth_keys.datatypes
+
                 private_key_obj = eth_keys.datatypes.PrivateKey(private_key)  # type: ignore[arg-type]
                 public_key = private_key_obj.public_key.to_address()
                 ss58_address = private_key_obj.public_key.to_checksum_address()
@@ -172,6 +165,9 @@ class Keypair:
         -------
         str: Seed phrase
         """
+        with wrap_import():
+            import bip39.bip39 as bip39  # type: ignore[import-untyped]
+
         return bip39.bip39_generate(words, language_code)
 
     @classmethod
@@ -188,6 +184,9 @@ class Keypair:
         -------
         bool
         """
+        with wrap_import():
+            import bip39.bip39 as bip39  # type: ignore[import-untyped]
+
         return bip39.bip39_validate(mnemonic, language_code)
 
     @classmethod
@@ -216,6 +215,9 @@ class Keypair:
             keypair = cls.create_from_private_key(private_key, ss58_format=ss58_format, crypto_type=crypto_type)
 
         else:
+            with wrap_import():
+                import bip39.bip39 as bip39  # type: ignore[import-untyped]
+
             seed_array = bip39.bip39_to_mini_secret(mnemonic, "", language_code)
 
             keypair = cls.create_from_seed(
@@ -250,8 +252,14 @@ class Keypair:
             seed_hex = bytes.fromhex(seed_hex.replace('0x', ''))
 
         if crypto_type == KeypairType.SR25519:
+            with wrap_import():
+                import sr25519
+
             public_key, private_key = sr25519.pair_from_seed(seed_hex)
         elif crypto_type == KeypairType.ED25519:
+            with wrap_import():
+                import ed25519_zebra  # type: ignore[import-untyped]
+
             private_key, public_key = ed25519_zebra.ed_from_seed(seed_hex)
         else:
             raise ValueError('crypto_type "{}" not supported'.format(crypto_type))
@@ -314,6 +322,9 @@ class Keypair:
 
                 if crypto_type not in [KeypairType.SR25519]:
                     raise NotImplementedError('Derivation paths for this crypto type not supported')
+
+                with wrap_import():
+                    import sr25519
 
                 derive_junctions = extract_derive_path(suri_parts['path'])
 
@@ -414,6 +425,9 @@ class Keypair:
         -------
         dict
         """
+        with wrap_import():
+            import sr25519
+
         if not name:
             name = self.ss58_address
 
@@ -461,9 +475,15 @@ class Keypair:
             raise ConfigurationError('No private key set to create signatures')
 
         if self.crypto_type == KeypairType.SR25519:
+            with wrap_import():
+                import sr25519
+
             signature = sr25519.sign((self.public_key, self.private_key), data)
 
         elif self.crypto_type == KeypairType.ED25519:
+            with wrap_import():
+                import ed25519_zebra
+
             signature = ed25519_zebra.ed_sign(self.private_key, data)
 
         elif self.crypto_type == KeypairType.ECDSA:
@@ -502,8 +522,14 @@ class Keypair:
             raise TypeError("Signature should be of type bytes or a hex-string")
 
         if self.crypto_type == KeypairType.SR25519:
+            with wrap_import():
+                import sr25519
+
             crypto_verify_fn = sr25519.verify
         elif self.crypto_type == KeypairType.ED25519:
+            with wrap_import():
+                import ed25519_zebra
+
             crypto_verify_fn = ed25519_zebra.ed_verify
         elif self.crypto_type == KeypairType.ECDSA:
             crypto_verify_fn = ecdsa_verify
@@ -540,6 +566,11 @@ class Keypair:
             raise ConfigurationError('No private key set to encrypt')
         if self.crypto_type != KeypairType.ED25519:
             raise ConfigurationError('Only ed25519 keypair type supported')
+        
+        with wrap_import():
+            import nacl.bindings
+            import nacl.public
+
         curve25519_public_key = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(recipient_public_key)
         recipient = nacl.public.PublicKey(curve25519_public_key)
         private_key = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(self.private_key + self.public_key)  # type: ignore[operator]
@@ -565,6 +596,11 @@ class Keypair:
             raise ConfigurationError('No private key set to decrypt')
         if self.crypto_type != KeypairType.ED25519:
             raise ConfigurationError('Only ed25519 keypair type supported')
+
+        with wrap_import():
+            import nacl.bindings
+            import nacl.public
+
         private_key = nacl.bindings.crypto_sign_ed25519_sk_to_curve25519(self.private_key + self.public_key)  # type: ignore[operator]
         recipient = nacl.public.PrivateKey(private_key)
         curve25519_public_key = nacl.bindings.crypto_sign_ed25519_pk_to_curve25519(sender_public_key)
