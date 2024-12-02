@@ -15,20 +15,18 @@
 # limitations under the License.
 import os
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
-from scalecodec.type_registry import load_type_registry_file
-from test import settings
+from scalecodec.type_registry import load_type_registry_file  # type: ignore[import-untyped]
 
-from scalecodec.exceptions import RemainingScaleBytesNotEmptyException
 
 from substrateinterface import SubstrateInterface
 
-from scalecodec.base import ScaleBytes
-from scalecodec.types import Vec, GenericAddress
+from scalecodec.base import ScaleBytes  # type: ignore[import-untyped]
+from scalecodec.types import Vec, GenericAddress  # type: ignore[import-untyped]
 
 
-class RPCCompatilibityTestCase(unittest.TestCase):
+class RPCCompatilibityTestCase(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -41,9 +39,9 @@ class RPCCompatilibityTestCase(unittest.TestCase):
             'MetadataVersioned', ScaleBytes(cls.metadata_fixture_dict['V14'])
         )
         metadata_decoder.decode()
-        cls.substrate.get_block_metadata = MagicMock(return_value=metadata_decoder)
+        cls.substrate.get_block_metadata = AsyncMock(return_value=metadata_decoder)
 
-        def mocked_query(module, storage_function, block_hash):
+        async def mocked_query(module, storage_function, block_hash):
             if module == 'Session' and storage_function == 'Validators':
                 if block_hash == '0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93':
                     vec = Vec()
@@ -54,7 +52,7 @@ class RPCCompatilibityTestCase(unittest.TestCase):
 
             raise ValueError(f"Unsupported mocked query {module}.{storage_function} @ {block_hash}")
 
-        def mocked_request(method, params, result_handler=None):
+        async def mocked_request(method, params, result_handler=None):
 
             if method in ['chain_getBlockHash', 'chain_getHead', 'chain_getFinalisedHead', 'chain_getFinalizedHead']:
                 return {
@@ -160,19 +158,48 @@ class RPCCompatilibityTestCase(unittest.TestCase):
                     "result": {"methods": ['author_submitExtrinsic', 'author_submitAndWatchExtrinsic', 'author_unwatchExtrinsic', 'author_pendingExtrinsics', 'chain_getBlockHash', 'chain_getHeader', 'chain_getBlock', 'chain_getFinalizedHead', 'chain_subscribeNewHead', 'chain_subscribeFinalizedHeads', 'chain_unsubscribeNewHead', 'chain_subscribeNewHeads', 'chain_unsubscribeNewHeads', 'chain_unsubscribeFinalizedHeads', 'state_getRuntimeVersion', 'state_getMetadata', 'state_getStorage', 'state_getKeysPaged', 'state_queryStorageAt', 'state_call', 'state_subscribeRuntimeVersion', 'state_unsubscribeRuntimeVersion', 'state_subscribeStorage', 'state_unsubscribeStorage', 'system_localPeerId', 'system_nodeRoles', 'system_localListenAddresses', 'system_chain', 'system_properties', 'system_name', 'system_version', 'system_chainType', 'system_health', 'system_dryRun', 'system_accountNextIndex', 'payment_queryFeeDetails', 'payment_queryInfo', 'dev_newBlock', 'dev_setStorage', 'dev_timeTravel', 'dev_setHead', 'dev_dryRun', 'rpc_methods']},
                     "id": 1
                 }
+            # FIXME: Random data
+            elif method == 'system_name':
+                return {
+                    "jsonrpc": "2.0",
+                    "result": "substrate-node",
+                    "id": 1
+                }
+            elif method == 'system_properties':
+                return {
+                    "jsonrpc": "2.0",
+                    "result": {
+                        "ss58Format": 42,
+                        "tokenDecimals": 12,
+                        "tokenSymbol": "KSM"
+                    },
+                    "id": 1
+                }
+            elif method == 'system_chain':
+                return {
+                    "jsonrpc": "2.0",
+                    "result": "Ethereum",
+                    "id": 1
+                }
+            elif method == 'system_version':
+                return {
+                    "jsonrpc": "2.0",
+                    "result": "substrate-node",
+                    "id": 1,
+                }
 
             raise ValueError(f"Unsupported mocked method {method}")
 
-        cls.substrate.rpc_request = MagicMock(side_effect=mocked_request)
-        cls.substrate.query = MagicMock(side_effect=mocked_query)
+        cls.substrate.rpc_request = AsyncMock(side_effect=mocked_request)
+        cls.substrate.query = AsyncMock(side_effect=mocked_query)
 
-    def test_get_block_by_head(self):
+    async def test_get_block_by_head(self):
 
-        block = self.substrate.get_block()
+        block = await self.substrate.get_block()
         self.assertEqual('0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93', block['header']['hash'])
 
-    def test_get_chain_head(self):
-        block_hash = self.substrate.get_chain_head()
+    async def test_get_chain_head(self):
+        block_hash = await self.substrate.get_chain_head()
         self.assertEqual('0xec828914eca09331dad704404479e2899a971a9b5948345dc40abca4ac818f93', block_hash)
 
 

@@ -17,54 +17,55 @@
 import os
 import unittest
 
-from scalecodec import ScaleBytes
+from scalecodec import ScaleBytes  # type: ignore[import-untyped]
 from substrateinterface import SubstrateInterface, ContractMetadata, ContractInstance, Keypair, ContractEvent
 from substrateinterface.exceptions import ContractMetadataParseException
 from test import settings
 
 
-class ContractMetadataTestCase(unittest.TestCase):
+class ContractMetadataTestCase(unittest.IsolatedAsyncioTestCase):
+    substrate: SubstrateInterface
 
     @classmethod
     def setUpClass(cls):
         cls.substrate = SubstrateInterface(url=settings.KUSAMA_NODE_URL)
 
-    def setUp(self) -> None:
-        self.contract_metadata = ContractMetadata.create_from_file(
+    async def asyncSetUp(self) -> None:
+        self.contract_metadata = await ContractMetadata.create_from_file(
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'erc20-v0.json'),
             substrate=self.substrate
         )
 
-    def test_metadata_parsed(self):
+    async def test_metadata_parsed(self):
         self.assertNotEqual(self.contract_metadata.metadata_dict, {})
 
-    def test_incorrect_metadata_file(self):
+    async def test_incorrect_metadata_file(self):
         with self.assertRaises(ContractMetadataParseException):
-            ContractMetadata.create_from_file(
+            await ContractMetadata.create_from_file(
                 metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'incorrect_metadata.json'),
                 substrate=self.substrate
             )
 
-    def test_extract_typestring_from_types(self):
+    async def test_extract_typestring_from_types(self):
         self.assertEqual('u128', self.contract_metadata.get_type_string_for_metadata_type(1))
         self.assertEqual('AccountId', self.contract_metadata.get_type_string_for_metadata_type(5))
         self.assertEqual('[u8; 32]', self.contract_metadata.get_type_string_for_metadata_type(6))
         self.assertEqual('Option<AccountId>', self.contract_metadata.get_type_string_for_metadata_type(15))
 
-    def test_invalid_type_id(self):
+    async def test_invalid_type_id(self):
         with self.assertRaises(ValueError) as cm:
             self.contract_metadata.get_type_string_for_metadata_type(99)
 
         self.assertEqual('type_id 99 not found in metadata', str(cm.exception))
 
-    def test_contract_types_added_type_registry(self):
+    async def test_contract_types_added_type_registry(self):
 
         for type_id in range(1, 16):
             type_string = self.contract_metadata.get_type_string_for_metadata_type(type_id)
             if type_string != '()':
                 self.assertIsNotNone(self.substrate.runtime_config.get_decoder_class(type_string))
 
-    def test_return_type_for_message(self):
+    async def test_return_type_for_message(self):
         self.assertEqual('u128', self.contract_metadata.get_return_type_string_for_message('total_supply'))
         self.assertEqual('u128', self.contract_metadata.get_return_type_string_for_message('balance_of'))
         self.assertEqual(
@@ -72,37 +73,37 @@ class ContractMetadataTestCase(unittest.TestCase):
             self.contract_metadata.get_return_type_string_for_message('approve')
         )
 
-    def test_invalid_constructor_name(self):
+    async def test_invalid_constructor_name(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_constructor_data("invalid")
+            await self.contract_metadata.generate_constructor_data("invalid")
 
         self.assertEqual('Constructor "invalid" not found', str(cm.exception))
 
-    def test_constructor_missing_arg(self):
+    async def test_constructor_missing_arg(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_constructor_data("new", args={'test': 2})
+            await self.contract_metadata.generate_constructor_data("new", args={'test': 2})
 
         self.assertEqual('Argument "initial_supply" is missing', str(cm.exception))
 
-    def test_constructor_data(self):
+    async def test_constructor_data(self):
 
-        scale_data = self.contract_metadata.generate_constructor_data("new", args={'initial_supply': 1000})
+        scale_data = await self.contract_metadata.generate_constructor_data("new", args={'initial_supply': 1000})
         self.assertEqual('0xd183512be8030000000000000000000000000000', scale_data.to_hex())
 
-    def test_invalid_message_name(self):
+    async def test_invalid_message_name(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_message_data("invalid_msg_name")
+            await self.contract_metadata.generate_message_data("invalid_msg_name")
 
         self.assertEqual('Message "invalid_msg_name" not found', str(cm.exception))
 
-    def test_generate_message_data(self):
+    async def test_generate_message_data(self):
 
-        scale_data = self.contract_metadata.generate_message_data("total_supply")
+        scale_data = await self.contract_metadata.generate_message_data("total_supply")
         self.assertEqual('0xdcb736b5', scale_data.to_hex())
 
-    def test_generate_message_data_with_args(self):
+    async def test_generate_message_data_with_args(self):
 
-        scale_data = self.contract_metadata.generate_message_data("transfer", args={
+        scale_data = await self.contract_metadata.generate_message_data("transfer", args={
             'to': '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
             'value': 10000
         })
@@ -111,14 +112,14 @@ class ContractMetadataTestCase(unittest.TestCase):
             scale_data.to_hex()
         )
 
-    def test_generate_message_data_missing_arg(self):
+    async def test_generate_message_data_missing_arg(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_message_data("transfer", args={
+            await self.contract_metadata.generate_message_data("transfer", args={
                 'value': 10000
             })
         self.assertEqual('Argument "to" is missing', str(cm.exception))
 
-    def test_contract_event_decoding(self):
+    async def test_contract_event_decoding(self):
         contract_event_data = '0x0001d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d018eaf04151687' + \
                               '736326c9fea17e25fc5287613693c912909cb226aa4794f26a480000a7dcf75015000000000000000000'
 
@@ -138,33 +139,33 @@ class ContractMetadataTestCase(unittest.TestCase):
         )
         self.assertEqual(6000000000000000, contract_event_obj.args[2]['value'])
 
-    def test_unsupported_ink_env_type_handling(self):
+    async def test_unsupported_ink_env_type_handling(self):
         with self.assertRaises(NotImplementedError):
 
-            ContractMetadata.create_from_file(
+            await ContractMetadata.create_from_file(
                 metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'unsupported_type_metadata.json'),
                 substrate=self.substrate
             )
 
 
 class ContractMetadataV1TestCase(ContractMetadataTestCase):
-    def setUp(self) -> None:
-        self.contract_metadata = ContractMetadata.create_from_file(
+    async def asyncSetUp(self) -> None:
+        self.contract_metadata = await ContractMetadata.create_from_file(
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'erc20-v1.json'),
             substrate=self.substrate
         )
 
-    def test_metadata_parsed(self):
+    async def test_metadata_parsed(self):
         self.assertNotEqual(self.contract_metadata.metadata_dict, {})
 
-    def test_incorrect_metadata_file(self):
+    async def test_incorrect_metadata_file(self):
         with self.assertRaises(ContractMetadataParseException):
-            ContractMetadata.create_from_file(
+            await ContractMetadata.create_from_file(
                 metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'incorrect_metadata.json'),
                 substrate=self.substrate
             )
 
-    def test_extract_typestring_from_types(self):
+    async def test_extract_typestring_from_types(self):
         self.assertEqual(
             'ink::0x418399d957539253bbabc230dffce9e131d9d2e7918edd67e9d7d3f6924e3d9e::1',
             self.contract_metadata.get_type_string_for_metadata_type(1)
@@ -174,20 +175,20 @@ class ContractMetadataV1TestCase(ContractMetadataTestCase):
             self.contract_metadata.get_type_string_for_metadata_type(5)
         )
 
-    def test_invalid_type_id(self):
+    async def test_invalid_type_id(self):
         with self.assertRaises(ValueError) as cm:
             self.contract_metadata.get_type_string_for_metadata_type(99)
 
         self.assertEqual('type_id 99 not found in metadata', str(cm.exception))
 
-    def test_contract_types_added_type_registry(self):
+    async def test_contract_types_added_type_registry(self):
 
         for type_id in range(0, len(self.contract_metadata.metadata_dict['types'])):
             type_string = self.contract_metadata.get_type_string_for_metadata_type(type_id)
             if type_string != '()':
                 self.assertIsNotNone(self.substrate.runtime_config.get_decoder_class(type_string))
 
-    def test_return_type_for_message(self):
+    async def test_return_type_for_message(self):
         self.assertEqual(
             'ink::0x418399d957539253bbabc230dffce9e131d9d2e7918edd67e9d7d3f6924e3d9e::0',
             self.contract_metadata.get_return_type_string_for_message('total_supply')
@@ -201,37 +202,37 @@ class ContractMetadataV1TestCase(ContractMetadataTestCase):
             self.contract_metadata.get_return_type_string_for_message('approve')
         )
 
-    def test_invalid_constructor_name(self):
+    async def test_invalid_constructor_name(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_constructor_data("invalid")
+            await self.contract_metadata.generate_constructor_data("invalid")
 
         self.assertEqual('Constructor "invalid" not found', str(cm.exception))
 
-    def test_constructor_missing_arg(self):
+    async def test_constructor_missing_arg(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_constructor_data("new", args={'test': 2})
+            await self.contract_metadata.generate_constructor_data("new", args={'test': 2})
 
         self.assertEqual('Argument "initial_supply" is missing', str(cm.exception))
 
-    def test_constructor_data(self):
+    async def test_constructor_data(self):
 
-        scale_data = self.contract_metadata.generate_constructor_data("new", args={'initial_supply': 1000})
+        scale_data = await self.contract_metadata.generate_constructor_data("new", args={'initial_supply': 1000})
         self.assertEqual('0x9bae9d5ee8030000000000000000000000000000', scale_data.to_hex())
 
-    def test_invalid_message_name(self):
+    async def test_invalid_message_name(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_message_data("invalid_msg_name")
+            await self.contract_metadata.generate_message_data("invalid_msg_name")
 
         self.assertEqual('Message "invalid_msg_name" not found', str(cm.exception))
 
-    def test_generate_message_data(self):
+    async def test_generate_message_data(self):
 
-        scale_data = self.contract_metadata.generate_message_data("total_supply")
+        scale_data = await self.contract_metadata.generate_message_data("total_supply")
         self.assertEqual('0xdb6375a8', scale_data.to_hex())
 
-    def test_generate_message_data_with_args(self):
+    async def test_generate_message_data_with_args(self):
 
-        scale_data = self.contract_metadata.generate_message_data("transfer", args={
+        scale_data = await self.contract_metadata.generate_message_data("transfer", args={
             'to': '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
             'value': 10000
         })
@@ -240,14 +241,14 @@ class ContractMetadataV1TestCase(ContractMetadataTestCase):
             scale_data.to_hex()
         )
 
-    def test_generate_message_data_missing_arg(self):
+    async def test_generate_message_data_missing_arg(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_message_data("transfer", args={
+            await self.contract_metadata.generate_message_data("transfer", args={
                 'value': 10000
             })
         self.assertEqual('Argument "to" is missing', str(cm.exception))
 
-    def test_contract_event_decoding(self):
+    async def test_contract_event_decoding(self):
         contract_event_data = '0x0001d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d018eaf04151687' + \
                               '736326c9fea17e25fc5287613693c912909cb226aa4794f26a480000a7dcf75015000000000000000000'
 
@@ -267,94 +268,96 @@ class ContractMetadataV1TestCase(ContractMetadataTestCase):
         )
         self.assertEqual(6000000000000000, contract_event_obj.args[2]['value'])
 
-    def test_unsupported_ink_env_type_handling(self):
+    async def test_unsupported_ink_env_type_handling(self):
         with self.assertRaises(NotImplementedError):
 
-            ContractMetadata.create_from_file(
+            await ContractMetadata.create_from_file(
                 metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'unsupported_type_metadata.json'),
                 substrate=self.substrate
             )
 
 
 class ContractMetadataV3TestCase(ContractMetadataV1TestCase):
-    def setUp(self) -> None:
-        self.contract_metadata = ContractMetadata.create_from_file(
+    async def asyncSetUp(self) -> None:
+        self.contract_metadata = await ContractMetadata.create_from_file(
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'erc20-v3.json'),
             substrate=self.substrate
         )
 
 
-class FlipperMetadataV3TestCase(unittest.TestCase):
+class FlipperMetadataV3TestCase(unittest.IsolatedAsyncioTestCase):
+    substrate: SubstrateInterface
 
     @classmethod
     def setUpClass(cls):
         cls.substrate = SubstrateInterface(url=settings.KUSAMA_NODE_URL)
 
-    def setUp(self) -> None:
-        self.contract_metadata = ContractMetadata.create_from_file(
+    async def asyncSetUp(self) -> None:
+        self.contract_metadata = await ContractMetadata.create_from_file(
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'flipper-v3.json'),
             substrate=self.substrate
         )
 
-    def test_metadata_parsed(self):
+    async def test_metadata_parsed(self):
         self.assertNotEqual(self.contract_metadata.metadata_dict, {})
 
-    def test_incorrect_metadata_file(self):
+    async def test_incorrect_metadata_file(self):
         with self.assertRaises(ContractMetadataParseException):
-            ContractMetadata.create_from_file(
+            await ContractMetadata.create_from_file(
                 metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'incorrect_metadata.json'),
                 substrate=self.substrate
             )
 
-    def test_extract_typestring_from_types(self):
+    async def test_extract_typestring_from_types(self):
         self.assertEqual(
             'ink::0xf051c631190ac47f82e280ba763df932210f6e2447978e24cbe0dcc6d6903c7a::0',
             self.contract_metadata.get_type_string_for_metadata_type(0)
         )
 
-    def test_contract_types_added_type_registry(self):
+    async def test_contract_types_added_type_registry(self):
         type_string = self.contract_metadata.get_type_string_for_metadata_type(0)
         if type_string != '()':
             self.assertIsNotNone(self.substrate.runtime_config.get_decoder_class(type_string))
 
-    def test_return_type_for_message(self):
+    async def test_return_type_for_message(self):
         self.assertEqual(
             'ink::0xf051c631190ac47f82e280ba763df932210f6e2447978e24cbe0dcc6d6903c7a::0',
             self.contract_metadata.get_return_type_string_for_message('get')
         )
         self.assertEqual('Null', self.contract_metadata.get_return_type_string_for_message('flip'))
 
-    def test_constructor_data(self):
+    async def test_constructor_data(self):
 
-        scale_data = self.contract_metadata.generate_constructor_data("new", args={'init_value': True})
+        scale_data = await self.contract_metadata.generate_constructor_data("new", args={'init_value': True})
         self.assertEqual('0x9bae9d5e01', scale_data.to_hex())
 
-    def test_generate_message_data(self):
+    async def test_generate_message_data(self):
 
-        scale_data = self.contract_metadata.generate_message_data("get")
+        scale_data = await self.contract_metadata.generate_message_data("get")
         self.assertEqual('0x2f865bd9', scale_data.to_hex())
 
-    def test_invalid_constructor_name(self):
+    async def test_invalid_constructor_name(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_constructor_data("invalid")
+            await self.contract_metadata.generate_constructor_data("invalid")
 
         self.assertEqual('Constructor "invalid" not found', str(cm.exception))
 
-    def test_invalid_message_name(self):
+    async def test_invalid_message_name(self):
         with self.assertRaises(ValueError) as cm:
-            self.contract_metadata.generate_message_data("invalid_msg_name")
+            await self.contract_metadata.generate_message_data("invalid_msg_name")
 
         self.assertEqual('Message "invalid_msg_name" not found', str(cm.exception))
 
 
-class FlipperInstanceTestCase(unittest.TestCase):
+class FlipperInstanceTestCase(unittest.IsolatedAsyncioTestCase):
+    substrate: SubstrateInterface
 
     @classmethod
     def setUpClass(cls):
 
         class MockedSubstrateInterface(SubstrateInterface):
 
-            def rpc_request(self, method, params, result_handler=None):
+            async def rpc_request(self, method, params, result_handler=None):
                 if method == 'state_call':
                     return {
                         'jsonrpc': '2.0',
@@ -373,36 +376,37 @@ class FlipperInstanceTestCase(unittest.TestCase):
                         },
                         'id': self.request_id}
 
-                return super().rpc_request(method, params, result_handler)
+                return await super().rpc_request(method, params, result_handler)
 
         cls.substrate = MockedSubstrateInterface(url=settings.KUSAMA_NODE_URL, type_registry_preset='canvas')
         # cls.substrate = SubstrateInterface(url='ws://127.0.0.1:9944')
 
         cls.keypair = Keypair.create_from_uri('//Alice')
 
-    def setUp(self) -> None:
-        self.contract = ContractInstance.create_from_address(
+    async def asyncSetUp(self) -> None:
+        self.contract = await ContractInstance.create_from_address(
             contract_address="5GhwarrVMH8kjb8XyW6zCfURHbHy3v84afzLbADyYYX6H2Kk",
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'flipper-v3.json'),
             substrate=self.substrate
         )
+        await self.contract.init()
 
-    def test_instance_read(self):
+    async def test_instance_read(self):
 
-        result = self.contract.read(self.keypair, 'get')
+        result = await self.contract.read(self.keypair, 'get')
 
         self.assertEqual(False, result.contract_result_data.value)
 
-    def test_instance_read_at_not_best_block(self):
-        parent_hash = self.substrate.get_block_header()['header']['parentHash']
-        result = self.contract.read(self.keypair, 'get', block_hash = parent_hash)
+    async def test_instance_read_at_not_best_block(self):
+        parent_hash = (await self.substrate.get_block_header())['header']['parentHash']
+        result = await self.contract.read(self.keypair, 'get', block_hash = parent_hash)
 
         self.assertEqual(False, result.contract_result_data.value)
 
 
 class FlipperInstanceV4TestCase(FlipperInstanceTestCase):
-    def setUp(self) -> None:
-        self.contract = ContractInstance.create_from_address(
+    async def asyncSetUp(self) -> None:
+        self.contract = await ContractInstance.create_from_address(
             contract_address="5DaohteAvvR9PZEhynqWvbFT8HEaHNuiiPTZV61VEUHnqsfU",
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'flipper-v4.json'),
             substrate=self.substrate
@@ -416,7 +420,7 @@ class FlipperInstanceV5TestCase(FlipperInstanceTestCase):
 
         class MockedSubstrateInterface(SubstrateInterface):
 
-            def rpc_request(self, method, params, result_handler=None):
+            async def rpc_request(self, method, params, result_handler=None):
                 if method == 'state_call':
                     return {
                         'jsonrpc': '2.0',
@@ -435,7 +439,7 @@ class FlipperInstanceV5TestCase(FlipperInstanceTestCase):
                         },
                         'id': self.request_id}
 
-                return super().rpc_request(method, params, result_handler)
+                return await super().rpc_request(method, params, result_handler)
 
         cls.substrate = MockedSubstrateInterface(
             url=settings.KUSAMA_NODE_URL, type_registry_preset='canvas', type_registry={'types': {"ContractExecResult": "ContractExecResultTo269"}}
@@ -443,22 +447,23 @@ class FlipperInstanceV5TestCase(FlipperInstanceTestCase):
 
         cls.keypair = Keypair.create_from_uri('//Alice')
 
-    def setUp(self) -> None:
-        self.contract = ContractInstance.create_from_address(
+    async def asyncSetUp(self) -> None:
+        self.contract = await ContractInstance.create_from_address(
             contract_address="5DaohteAvvR9PZEhynqWvbFT8HEaHNuiiPTZV61VEUHnqsfU",
             metadata_file=os.path.join(os.path.dirname(__file__), 'fixtures', 'flipper-v5.json'),
             substrate=self.substrate
         )
+        await self.contract.init()
 
-    def test_instance_read(self):
+    async def test_instance_read(self):
 
-        result = self.contract.read(self.keypair, 'get')
+        result = await self.contract.read(self.keypair, 'get')
 
         self.assertEqual({'Ok': False}, result.contract_result_data.value)
 
-    def test_instance_read_at_not_best_block(self):
-        parent_hash = self.substrate.get_block_header()['header']['parentHash']
-        result = self.contract.read(self.keypair, 'get', block_hash=parent_hash)
+    async def test_instance_read_at_not_best_block(self):
+        parent_hash = (await self.substrate.get_block_header())['header']['parentHash']
+        result = await self.contract.read(self.keypair, 'get', block_hash=parent_hash)
 
         self.assertEqual({'Ok': False}, result.contract_result_data.value)
 

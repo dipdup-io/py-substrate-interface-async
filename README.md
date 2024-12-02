@@ -35,13 +35,13 @@ older or runtimes under development the `ss58_format` (default 42) and other pro
 
 ### Balance information of an account
 ```python
-result = substrate.query('System', 'Account', ['F4xQKRUagnSGjFqafyhajLs94e7Vvzvr8ebwYJceKpr8R7T'])
+result = await substrate.query('System', 'Account', ['F4xQKRUagnSGjFqafyhajLs94e7Vvzvr8ebwYJceKpr8R7T'])
 print(result.value['data']['free']) # 635278638077956496
 ```
 ### Create balance transfer extrinsic
 
 ```python
-call = substrate.compose_call(
+call = await substrate.compose_call(
     call_module='Balances',
     call_function='transfer',
     call_params={
@@ -51,9 +51,9 @@ call = substrate.compose_call(
 )
 
 keypair = Keypair.create_from_uri('//Alice')
-extrinsic = substrate.create_signed_extrinsic(call=call, keypair=keypair)
+extrinsic = await substrate.create_signed_extrinsic(call=call, keypair=keypair)
 
-receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+receipt = await substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
 
 print(f"Extrinsic '{receipt.extrinsic_hash}' sent and included in block '{receipt.block_hash}'")
 ```

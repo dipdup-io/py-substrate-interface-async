@@ -81,7 +81,7 @@ substrate = SubstrateInterface(
     type_registry_preset='substrate-node-template',
 )
 
-call = substrate.compose_call(
+call = await substrate.compose_call(
     call_module='Balances',
     call_function='transfer_keep_alive',
     call_params={
@@ -108,7 +108,7 @@ signature = keypair.sign(signature_payload)
 ```python
 keypair = Keypair(ss58_address="5EChUec3ZQhUvY1g52ZbfBVkqjUY9Kcr6mcEvQMbmd38shQL")
 
-extrinsic = substrate.create_signed_extrinsic(
+extrinsic = await substrate.create_signed_extrinsic(
     call=call,
     keypair=keypair,
     era=era,
@@ -116,7 +116,7 @@ extrinsic = substrate.create_signed_extrinsic(
     signature=signature
 )
 
-result = substrate.submit_extrinsic(
+result = await substrate.submit_extrinsic(
     extrinsic=extrinsic
 )
 

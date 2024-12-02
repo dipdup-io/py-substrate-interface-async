@@ -19,7 +19,7 @@ substrate = SubstrateInterface(
 keypair = Keypair.create_from_uri('//Alice')
 
 # Deploy contract
-code = ContractCode.create_from_contract_files(
+code = await ContractCode.create_from_contract_files(
     metadata_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper.json'),
     wasm_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper.wasm'),
     substrate=substrate
@@ -41,7 +41,7 @@ print(f'✅ Deployed @ {contract.contract_address}')
 
 ```python
 # Create contract instance from deterministic address
-contract = ContractInstance.create_from_address(
+contract = await ContractInstance.create_from_address(
     contract_address=contract_address,
     metadata_file=os.path.join(os.path.dirname(__file__), 'assets', 'flipper.json'),
     substrate=substrate

@@ -16,7 +16,7 @@ import re
 from hashlib import blake2b
 from math import ceil
 
-from scalecodec.types import Bytes
+from scalecodec.types import Bytes  # type: ignore[import-untyped]
 
 RE_JUNCTION = r'(\/\/?)([^/]+)'
 JUNCTION_ID_LEN = 32
