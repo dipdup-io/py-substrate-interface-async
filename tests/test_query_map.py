@@ -22,7 +22,7 @@ from scalecodec.types import GenericAccountId  # type: ignore[import-untyped]
 from substrateinterface.exceptions import SubstrateRequestException
 
 from substrateinterface import SubstrateInterface
-from test import settings
+from tests import settings
 
 
 class QueryMapTestCase(unittest.IsolatedAsyncioTestCase):

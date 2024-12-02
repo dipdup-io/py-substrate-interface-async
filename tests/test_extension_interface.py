@@ -21,7 +21,7 @@ import unittest
 from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import ExtensionCallNotFound
 from substrateinterface.extensions import SubstrateNodeExtension
-from test import settings
+from tests import settings
 
 
 class ExtensionsTestCase(unittest.IsolatedAsyncioTestCase):

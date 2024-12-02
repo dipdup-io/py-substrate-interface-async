@@ -18,7 +18,7 @@ import unittest
 
 from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import StorageFunctionNotFound
-from test import settings
+from tests import settings
 
 
 class QueryTestCase(unittest.IsolatedAsyncioTestCase):
